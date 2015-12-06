@@ -1,6 +1,6 @@
   ## Use cases
 
-  **Super fast and easy time-series analytics**
+  **Ready-made web/mobile multi-tenant backend with easy time-series analytics**
 
   This storage engine was designed for the Temporalize dashboarding/analytics service which can be used for any kind
   of dashboard. However, its temporal capability differentiates it from other such services. If all you need is log tail analytics
