@@ -2,9 +2,7 @@ restify = require("restify")
 fs = require('fs')
 path = require('path')
 
-#hello = require("./src/hello")
-#snapshotApi = require("./src/snapshotApi")
-loadSprocs = require("./src/createServerEndpointForEachSproc")
+loadEndpoints = require(path.join(__dirname, 'src', 'loadEndpoints'))
 
 port = process.env.PORT or 1338
 
@@ -18,7 +16,12 @@ server.use(restify.queryParser({mapParams: false}))
 server.locals = {}
 
 sprocDirectory = path.join(__dirname, 'sprocs')
-loadSprocs(sprocDirectory, server, () ->
+# Load sprocs once we have them
+
+loadEndpoints(server, se, (err) ->
+  if err?
+    console.dir(err)
+    throw new Error("Got error trying to loadEndpoints")
   server.listen(port, () ->
     console.log("%s listening at %s", server.name, server.url)
   )

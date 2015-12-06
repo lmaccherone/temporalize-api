@@ -1,8 +1,8 @@
 {
-  "name": "temporalize",
+  "name": "temporalize-api",
   "version": "0.1.0",
-  "description": "Time-series storage and analysis engine built on top of NoSQL databases",
-  "main": "server.coffee",
+  "description": "Ready-made web/mobile multi-tenant backend with easy time-series analytics",
+  "main": "./server",
   "scripts": {
     "test": "nodeunit"
   },
@@ -15,6 +15,10 @@
   ],
   "author": "Larry Maccherone",
   "license": "For evaluation and non-commercial use. Contact for commericial license.",
+  "repository": {
+    "type": "git",
+    "url": "http://github.com/lmaccherone/temporalize-api.git"
+  },
   "devDependencies": {
     "coffee-script": "^1.9.3",
     "documentdb-mock": "^0.1.4",
