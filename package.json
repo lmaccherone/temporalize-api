@@ -2,7 +2,7 @@
   "name": "temporalize-api",
   "version": "0.1.0",
   "description": "Ready-made web/mobile multi-tenant backend with easy time-series analytics",
-  "main": "./server",
+  "main": "./server.coffee",
   "scripts": {
     "test": "nodeunit"
   },
@@ -21,15 +21,16 @@
   },
   "devDependencies": {
     "coffee-script": "^1.9.3",
-    "documentdb-mock": "^0.1.4",
-    "nodemon": "^1.7.1",
+    "documentdb-mock": "^0.3.0",
+    "nodemon": "^1.8.1",
     "nodeunit": "^0.9.1",
     "rewire": "^2.3.4"
   },
   "dependencies": {
-    "documentdb-utils": "^0.4.1",
+    "documentdb-utils": "^0.7.0",
+    "hashring": "^3.2.0",
     "lumenize": "^0.9.12",
     "restify": "^4.0.3",
-    "sql-from-mongo": "^0.1.2"
+    "zxcvbn": "^4.2.0"
   }
 }

@@ -1,8 +1,14 @@
 restify = require("restify")
 fs = require('fs')
 path = require('path')
+StorageEngine = require(path.join(__dirname, 'src', 'StorageEngine'))
 
 loadEndpoints = require(path.join(__dirname, 'src', 'loadEndpoints'))
+
+se = null
+seConfig =
+  terminate: false
+  debug: false
 
 port = process.env.PORT or 1338
 
@@ -18,11 +24,13 @@ server.locals = {}
 sprocDirectory = path.join(__dirname, 'sprocs')
 # Load sprocs once we have them
 
-loadEndpoints(server, se, (err) ->
-  if err?
-    console.dir(err)
-    throw new Error("Got error trying to loadEndpoints")
-  server.listen(port, () ->
-    console.log("%s listening at %s", server.name, server.url)
+se = new StorageEngine(seConfig, () ->
+  loadEndpoints(server, se, (err) ->
+    if err?
+      console.dir(err)
+      throw new Error("Got error trying to loadEndpoints")
+    server.listen(port, () ->
+      console.log("%s listening at %s", server.name, server.url)
+    )
   )
 )

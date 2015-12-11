@@ -10,7 +10,7 @@ exports.getHelloTestLive =
     })
 
     client.get('/hello', (err, req, res, obj) ->
-      test.equal(obj.memo.response, 'Hello world.')
+      test.deepEqual(obj, {hello: 'world'})
       test.done()
 
     )
