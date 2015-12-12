@@ -24,46 +24,44 @@ session = null
 module.exports =
 
   setUp: (callback) ->
-    client.post('/login', null, (err, req, res, obj) ->
+    client.post('/delete-database', {databaseID: "A"}, (err, req, res, obj) ->
       if err?
-        console.dir(err)
-        throw new Error("Got unexpeced error trying to login")
-
-      session = obj
-
-      client.post('/delete-database', {sessionID: session.id, databaseID: "A"}, (err, req, res, obj) ->
-        if err?
-          callback(err)
-        else
-          client.post('/initialize-database', {sessionID: session.id}, (err, req, res, obj) ->
-            callback(null, obj)
-          )
-      )
+        throw new Error(err)
+      else
+        client.post('/initialize-database', {}, (err, req, res, obj) ->
+          if err?
+            throw new Error(err)
+          else
+            console.log("Database initialized")
+            callback()
+        )
     )
+
 
   junk: (test) ->
     test.done()
 
-  someDocs: (test) ->
-
-    client.post('/upsert-user', {sessionID: session.id, user: user}, (err, req, res, obj) ->
-      if err?
-        console.dir(err)
-        throw new Error("Got unexpeced error trying to login")
-
-      test.ok(!obj.password)
-      for key, value of user
-        unless key is 'password'
-          test.deepEqual(obj[key], value)
-
-      test.done()
-    )
-
-#  tearDown: (callback) ->
-#    client.post('/delete-database', {sessionID: session.id, databaseID: "A"}, (err, req, res, obj) ->
+#  someDocs: (test) ->
+#
+#    client.post('/upsert-user', {sessionID: session.id, user: user}, (err, req, res, obj) ->
 #      if err?
-#        callback(err)
-#      else
-#        callback(null, obj)
+#        console.dir(err)
+#        throw new Error("Got unexpeced error trying to login")
+#
+#      test.ok(!obj.password)
+#      for key, value of user
+#        unless key is 'password'
+#          test.deepEqual(obj[key], value)
+#
+#      test.done()
 #    )
+
+  tearDown: (callback) ->
+    client.post('/delete-database', {databaseID: "A"}, (err, req, res, obj) ->
+      if err?
+        throw new Error(err)
+      else
+        console.log("Database deleted")
+        callback()
+    )
 

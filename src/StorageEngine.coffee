@@ -120,27 +120,17 @@ module.exports = class StorageEngine
     )
 
 
-  initializeDatabase: (sessionID, callback) ->
-    if sessionID?
-      @_getSession(sessionID, (err, session) =>
-        unless session.user._IsTemporalizeSuperUser
-          callback({code: 401, body: "Only super users can initialize the database"})
-          return
+  initializeDatabase: (username, password, callback) ->
+    if username is process.env.TEMPORALIZE_USERNAME and password is process.env.TEMPORALIZE_PASSWORD
         @_initializeDatabase(callback)
-      )
     else
-      callback({code: 401, body: "Missing sessionID"})
+      callback({code: 401, body: "Invalid login"})
 
-  deleteDatabase: (sessionID, databaseID, callback) ->
-    if sessionID?
-      @_getSession(sessionID, (err, session) =>
-        unless session.user._IsTemporalizeSuperUser
-          callback({code: 401, body: "Only super users can delete a database"})
-          return
-        @client.deleteDatabase(getLink(databaseID), callback)
-      )
+  deleteDatabase: (username, password, databaseID, callback) ->
+    if username is process.env.TEMPORALIZE_USERNAME and password is process.env.TEMPORALIZE_PASSWORD
+      @client.deleteDatabase(getLink(databaseID), callback)
     else
-      callback({code: 401, body: "Missing sessionID"})
+      callback({code: 401, body: "Invalid login"})
 
   _delay = (ms, func) ->
     setTimeout(func, ms)

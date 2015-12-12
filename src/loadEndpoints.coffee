@@ -32,12 +32,25 @@ module.exports = (server, se, callback) ->
   )
 
   server.post('/delete-database', (req, res, next) ->
-    sessionID = req.body.sessionID
+    username = req.authorization.basic.username
+    password = req.authorization.basic.password
     if req.body?.databaseID?
       databaseID = req.body.databaseID
     else
       databaseID = body
-    se.deleteDatabase(sessionID, databaseID, (err, response) ->
+    se.deleteDatabase(username, password, databaseID, (err, response) ->
+      if err?
+        res.send(err.code, err.body)
+      else
+        res.send(200, response)
+        next()
+    )
+  )
+
+  server.post('/initialize-database', (req, res, next) ->
+    username = req.authorization.basic.username
+    password = req.authorization.basic.password
+    se.initializeDatabase(username, password, (err, response) ->
       if err?
         res.send(err.code, err.body)
       else
