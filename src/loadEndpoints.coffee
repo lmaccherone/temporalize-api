@@ -10,7 +10,9 @@ module.exports = (server, se, callback) ->
   )
 
   server.post('/login', (req, res, next) ->
-    se.login(req.authorization.basic.username, req.authorization.basic.password, (err, response) ->
+    username = req.authorization.basic.username or req.body.username
+    password = req.authorization.basic.password or req.body.password
+    se.login(username, password, (err, response) ->
       if err?
         res.send(err.code, err.body)
       else
@@ -31,10 +33,10 @@ module.exports = (server, se, callback) ->
     )
   )
 
-  server.post('/delete-test-database', (req, res, next) ->
+  server.post('/delete-partition', (req, res, next) ->
     username = req.authorization.basic.username
     password = req.authorization.basic.password
-    se.deleteTestDatabase(username, password, (err, response) ->
+    se.deletePartition(username, password, (err, response) ->
       if err?
         res.send(err.code, err.body)
       else
@@ -43,10 +45,10 @@ module.exports = (server, se, callback) ->
     )
   )
 
-  server.post('/initialize-test-database', (req, res, next) ->
+  server.post('/initialize-partition', (req, res, next) ->
     username = req.authorization.basic.username
     password = req.authorization.basic.password
-    se.initializeTestDatabase(username, password, (err, response) ->
+    se.initializePartition(username, password, (err, response) ->
       if err?
         res.send(err.code, err.body)
       else
@@ -54,8 +56,6 @@ module.exports = (server, se, callback) ->
         next()
     )
   )
-
-
 
   callback()
 

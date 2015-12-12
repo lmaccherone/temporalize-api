@@ -21,7 +21,7 @@ exports.resolverAndLinkTest =
     masterKey = process.env.DOCUMENT_DB_KEY
     auth = {masterKey}
     client = new WrappedClient(urlConnection, auth)
-    client.deleteTestDatabase(getLink(config.firstTopLevelID), () ->
+    client.deleteTestPartition(getLink(config.firstTopLevelID), () ->
       callback()
     )
 
@@ -124,7 +124,7 @@ exports.resolverAndLinkTest =
 
   tearDown: (callback) ->
     f = () ->
-      client.deleteTestDatabase(getLink(config.firstTopLevelID), (err, response) ->
+      client.deleteTestPartition(getLink(config.firstTopLevelID), (err, response) ->
         if err?
           console.dir(err)
           throw new Error("Got error trying to delete test database")

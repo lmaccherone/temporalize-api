@@ -23,46 +23,45 @@ session = null
 
 module.exports =
 
-  # TODO: Need to configure this so that database is not "A". May need to populate @storageEngineConfig
   setUp: (callback) ->
-    client.post('/delete-test-database', {}, (err, req, res, obj) ->
+    client.post('/delete-partition', {}, (err, req, res, obj) ->
       if err?
         throw new Error(err)
       else
-        client.post('/initialize-test-database', {}, (err, req, res, obj) ->
+        client.post('/initialize-partition', {}, (err, req, res, obj) ->
           if err?
             throw new Error(err)
           else
-            console.log("Database initialized")
+            console.log("Partition initialized for test")
             callback()
         )
     )
 
+  someDocs: (test) ->
+    client.post('/login', {}, (err, req, res, obj) ->
+      if err?
+        throw new Error("Got unexected error trying to login as superuser")
+      session = obj
+      client.post('/upsert-user', {sessionID: session.id, user: user}, (err, req, res, obj) ->
+        if err?
+          console.dir(err)
+          throw new Error("Got unexpeced error trying to login")
 
-  junk: (test) ->
-    test.done()
+        test.ok(!obj.password)
+        for key, value of user
+          unless key is 'password'
+            test.deepEqual(obj[key], value)
 
-#  someDocs: (test) ->
-#
-#    client.post('/upsert-user', {sessionID: session.id, user: user}, (err, req, res, obj) ->
-#      if err?
-#        console.dir(err)
-#        throw new Error("Got unexpeced error trying to login")
-#
-#      test.ok(!obj.password)
-#      for key, value of user
-#        unless key is 'password'
-#          test.deepEqual(obj[key], value)
-#
-#      test.done()
-#    )
+        test.done()
+      )
+    )
 
   tearDown: (callback) ->
-    client.post('/delete-test-database', (err, req, res, obj) ->
+    client.post('/delete-partition', (err, req, res, obj) ->
       if err?
         throw new Error(err)
       else
-        console.log("Database deleted")
+        console.log("Test partition deleted")
         callback()
     )
 

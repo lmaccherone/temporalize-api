@@ -19,11 +19,19 @@ module.exports = class StorageEngine
       userConfig = {}
     config = JSON.parse(JSON.stringify(userConfig))  # Make a clone
 
+    # Check the environment
+    @environment = process.env.NODE_ENV
+    unless @environment? and @environment in ['development', 'testing', 'production']
+      callback({code: 400, body: "environment variable NODE_ENV must be set to development, testing, or production"})
+
     # Set defaults
     @topLevelPartitionField = config.topLevelPartitionField or '_TenantID'
     @secondLevelPartitionField = config.secondLevelPartitionField or '_EntityID'
-    @firstTopLevelID = config.firstTopLevelID or 'A'
-    @firstSecondLevelID = config.firstSecondLevelID or '001'
+    if @environment is 'production'
+      @firstTopLevelID = config.firstTopLevelID or 'A'
+    else
+      @firstTopLevelID = config.firstTopLevelID or @environment + '-A'
+    @firstSecondLevelID = config.firstSecondLevelID or '1'
     @temporalPolicy = config.temporalPolicy or 'VALID_TIME'
     @refreshConfigMS = config.refreshConfigMS or 10000
     @debug = config.debug or false
@@ -69,7 +77,7 @@ module.exports = class StorageEngine
         if err?.code is 409
           @_debug("Database already existed")
         else
-          @_debug("Created Database. Response:", response)
+          @_debug("Created Database", response)
 
         # Unless it already exists, create first collection
         databaseIDLink = getLink(@firstTopLevelID)
@@ -82,7 +90,7 @@ module.exports = class StorageEngine
           if err? and err.code isnt 409
             throw new Error(JSON.stringify(err))
           else
-            @_debug("Created Collection. Response:", response)
+            @_debug("Created Collection", response)
             collectionIDLink = getLink(@firstTopLevelID, @firstSecondLevelID)
             if response?
               @linkCache[collectionIDLink] = response._self
@@ -119,35 +127,42 @@ module.exports = class StorageEngine
         )
     )
 
-
-  initializeTestDatabase: (username, password, callback) ->
-    @firstTopLevelID = 'dev-test-database'
-    @firstSecondLevelID = 'dev-test-collection'
+  initializePartition: (username, password, callback) ->
+    if process.env.NODE_ENV is 'production'
+      return callback("initializePartition is not supported in production")
     if username is process.env.TEMPORALIZE_USERNAME and password is process.env.TEMPORALIZE_PASSWORD
-        @_initializeDatabase(callback)
+      @terminate = false  # TODO: This is not thread safe. It could attempt an operation before the database is ready. Consider moving @terminate=false into _initializeDatabase, but make sure that we fix the tests that set @terminate=true at the beginngin of execution, if there are any.
+      @_initializeDatabase((err, result) ->
+        if err?
+          callback(err)
+        else
+          callback(null, result)
+      )
     else
-      callback({code: 401, body: "Invalid login"})
+      callback({code: 401, body: "Invalid login for initializeTestPartition"})
 
-  deleteTestDatabase: (username, password, callback) ->
-    @firstTopLevelID = 'dev-test-database'
+  deletePartition: (username, password, callback) ->
+    if process.env.NODE_ENV is 'production'
+      return callback("deletePartition is not supported in production")
+    @terminate = true
     if username is process.env.TEMPORALIZE_USERNAME and password is process.env.TEMPORALIZE_PASSWORD
-      @client.deleteDatabase(getLink(@firstTopLevelID), (err, result, headers) ->
-        console.dir('err inside deleteDatabase', err)
+      @client.deleteDatabase(getLink(@firstTopLevelID), (err, result) ->
         if err? and err.code isnt 404
           callback(err)
         else
           callback(null, result)
       )
     else
-      callback({code: 401, body: "Invalid login"})
+      callback({code: 401, body: "Invalid login for deletePartition"})
 
   _delay = (ms, func) ->
     setTimeout(func, ms)
 
   _debug: (message, content, content2) ->
-    # TODO: Add logging here. Current favorite is https://github.com/trentm/node-bunyan
-    if @debug
+    # TODO: Add logging here. Current favorite is https://github.com/trentm/node-bunyan to Loggly
+    if @debug or process.env.NODE_ENV isnt 'production'
       console.log(message)
+    if @debug
       if content?
         console.log(JSON.stringify(content, null, 2))
         console.log()
@@ -425,13 +440,14 @@ module.exports = class StorageEngine
       transactionHandler({code: 401, body: "Missing sessionID"})
 
   _upsert: (upserts, temporalPolicy = @temporalPolicy, callback) =>
-    unless @terminate
-      unless callback?
-        callback = temporalPolicy
-        temporalPolicy = null
-      unless temporalPolicy?
-        temporalPolicy = @temporalPolicy
-
+    unless callback?
+      callback = temporalPolicy
+      temporalPolicy = null
+    unless temporalPolicy?
+      temporalPolicy = @temporalPolicy
+    if @terminate
+      callback({code: 400, body: 'Cannot call _upsert when @terminate is true'})
+    else
       unless _.isArray(upserts)
         upserts = [upserts]
 
