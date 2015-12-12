@@ -524,6 +524,12 @@ module.exports = class StorageEngine
     # Since Temporalize owns this entity type, the temporalPolicy is always 'VALID_TIME'
     unless callback?
       callback = password
+    unless user.tenantIDsICanAdmin?
+      user.tenantIDsICanAdmin = []
+    unless user.tenantIDsICanRead?
+      user.tenantIDsICanRead = []
+    unless user.tenantIDsICanWrite?
+      user.tenantIDsICanWrite = []
     delete user._IsTemporalizeSuperUser  # Super users can only be created by calling _upsertUser or writing directly to the database
     if sessionID?
       @_getSession(sessionID, (err, session) =>
@@ -711,9 +717,13 @@ module.exports = class StorageEngine
         callback(err)
       else
         @_query(config, (err, result) =>
+          if err?
+            callback(err)
           authorizedForAll = true
           unauthorizedTenantIDs = []
           for row in result.all
+            unless row[@topLevelPartitionField]?
+              callback({code: 400, body: "Found documents without #{@topLevelPartitionField} field. Database corruption has likely occured"})
             unless row[@topLevelPartitionField] in session.user.tenantIDsICanRead
               unauthorizedTenantIDs.push(row[@topLevelPartitionField])
               authorizedForAll = false
@@ -721,7 +731,6 @@ module.exports = class StorageEngine
             callback(err, result)
           else
             callback({code: 401, body: "Unauthorized for TenantIDs indicated in unauthorizedTenantIDs", unauthorizedTenantIDs})
-
         )
     )
 
@@ -742,13 +751,13 @@ module.exports = class StorageEngine
     unless config.maxItemCount?
       config.maxItemCount = -1
 
-    if config.fields?
-      callback({code: 400, body: "config.fields is deprecated. Include your fields, orderBy in the query you provide"})
-
     if config.query?
       modifiedQuery = JSON.parse(JSON.stringify(config.query))
     else
       modifiedQuery = {}
+
+    if config.fields?
+      config.fields = _.union(config.fields, [@topLevelPartitionField])
 
     if config.secondLevelPartitionKey?
       modifiedQuery[@secondLevelPartitionField] = config.secondLevelPartitionKey

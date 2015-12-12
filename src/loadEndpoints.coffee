@@ -34,5 +34,17 @@ module.exports = (server, se, callback) ->
         next()
     )
   )
+
+  server.post('/upsert', (req, res, next) ->
+    console.log(req)
+#    se.query(req.authorization.basic.username, req.authorization.basic.password, (err, response) ->
+#      if err?
+#        res.send(err.code, err.body)
+#      else
+#        res.send(200, response)
+#        next()
+#    )
+  )
+
   callback()
 
