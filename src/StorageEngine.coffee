@@ -57,6 +57,9 @@ module.exports = class StorageEngine
       else
         @client = new WrappedClient()
 
+    @_initializeDatabase(callback)
+
+  _initializeDatabase: (callback) ->
     # Unless it already exists, create first database
     @_debug("Checking existence or creating database: #{@firstTopLevelID}")
     @client.createDatabase({id: @firstTopLevelID}, (err, response) =>
@@ -115,6 +118,29 @@ module.exports = class StorageEngine
             )
         )
     )
+
+
+  initializeDatabase: (sessionID, callback) ->
+    if sessionID?
+      @_getSession(sessionID, (err, session) =>
+        unless session.user._IsTemporalizeSuperUser
+          callback({code: 401, body: "Only super users can initialize the database"})
+          return
+        @_initializeDatabase(callback)
+      )
+    else
+      callback({code: 401, body: "Missing sessionID"})
+
+  deleteDatabase: (sessionID, databaseID, callback) ->
+    if sessionID?
+      @_getSession(sessionID, (err, session) =>
+        unless session.user._IsTemporalizeSuperUser
+          callback({code: 401, body: "Only super users can delete a database"})
+          return
+        @client.deleteDatabase(getLink(databaseID), callback)
+      )
+    else
+      callback({code: 401, body: "Missing sessionID"})
 
   _delay = (ms, func) ->
     setTimeout(func, ms)
@@ -397,10 +423,7 @@ module.exports = class StorageEngine
         @_upsert(upserts, temporalPolicy, callback)
       )
     else
-      transactionHandler({
-        code: 401,
-        body: "Missing sessionID"
-      })
+      transactionHandler({code: 401, body: "Missing sessionID"})
 
   _upsert: (upserts, temporalPolicy = @temporalPolicy, callback) =>
     unless @terminate
@@ -519,7 +542,7 @@ module.exports = class StorageEngine
           @client.createDocument(collectionLink, upsertCopy, transactionHandler)
     )
 
-  upsertUser: (sessionID, user, password, callback) =>
+  upsertUser: (sessionID, user, password, callback) =>  # GET /upsert-user
     # You can either provide the password as a field inside the user entity or as a seperate parameter
     # Since Temporalize owns this entity type, the temporalPolicy is always 'VALID_TIME'
     unless callback?
@@ -614,6 +637,8 @@ module.exports = class StorageEngine
               session._Created = new Date().toISOString()
               delete user.hash
               delete user.salt
+              delete user._PreviousValues.hash
+              delete user._PreviousValues.salt
               session.user = user
               # TODO: Write the session. By the time we do this to-do, hopefully DocumentDB will have TTL support. Until then, I doubt it'll be an issue.
               @sessionCacheByID[session.id] = session
