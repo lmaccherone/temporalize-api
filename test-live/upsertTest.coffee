@@ -23,12 +23,13 @@ session = null
 
 module.exports =
 
+  # TODO: Need to configure this so that database is not "A". May need to populate @storageEngineConfig
   setUp: (callback) ->
-    client.post('/delete-database', {databaseID: "A"}, (err, req, res, obj) ->
+    client.post('/delete-test-database', {}, (err, req, res, obj) ->
       if err?
         throw new Error(err)
       else
-        client.post('/initialize-database', {}, (err, req, res, obj) ->
+        client.post('/initialize-test-database', {}, (err, req, res, obj) ->
           if err?
             throw new Error(err)
           else
@@ -57,7 +58,7 @@ module.exports =
 #    )
 
   tearDown: (callback) ->
-    client.post('/delete-database', {databaseID: "A"}, (err, req, res, obj) ->
+    client.post('/delete-test-database', (err, req, res, obj) ->
       if err?
         throw new Error(err)
       else

@@ -120,15 +120,24 @@ module.exports = class StorageEngine
     )
 
 
-  initializeDatabase: (username, password, callback) ->
+  initializeTestDatabase: (username, password, callback) ->
+    @firstTopLevelID = 'dev-test-database'
+    @firstSecondLevelID = 'dev-test-collection'
     if username is process.env.TEMPORALIZE_USERNAME and password is process.env.TEMPORALIZE_PASSWORD
         @_initializeDatabase(callback)
     else
       callback({code: 401, body: "Invalid login"})
 
-  deleteDatabase: (username, password, databaseID, callback) ->
+  deleteTestDatabase: (username, password, callback) ->
+    @firstTopLevelID = 'dev-test-database'
     if username is process.env.TEMPORALIZE_USERNAME and password is process.env.TEMPORALIZE_PASSWORD
-      @client.deleteDatabase(getLink(databaseID), callback)
+      @client.deleteDatabase(getLink(@firstTopLevelID), (err, result, headers) ->
+        console.dir('err inside deleteDatabase', err)
+        if err? and err.code isnt 404
+          callback(err)
+        else
+          callback(null, result)
+      )
     else
       callback({code: 401, body: "Invalid login"})
 

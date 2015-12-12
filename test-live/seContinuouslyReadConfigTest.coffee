@@ -19,7 +19,7 @@ exports.continuouslyReadTest =
     masterKey = process.env.DOCUMENT_DB_KEY
     auth = {masterKey}
     client = new WrappedClient(urlConnection, auth)
-    client.deleteDatabase(getLink(config.firstTopLevelID), () =>
+    client.deleteTestDatabase(getLink(config.firstTopLevelID), () =>
       callback()
     )
 
@@ -40,7 +40,7 @@ exports.continuouslyReadTest =
 
   tearDown: (callback) ->
     f = () ->
-      client.deleteDatabase(getLink(config.firstTopLevelID), () ->
+      client.deleteTestDatabase(getLink(config.firstTopLevelID), () ->
         callback()
       )
     setTimeout(f, config.refreshConfigMS + 500)

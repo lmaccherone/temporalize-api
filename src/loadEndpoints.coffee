@@ -31,14 +31,10 @@ module.exports = (server, se, callback) ->
     )
   )
 
-  server.post('/delete-database', (req, res, next) ->
+  server.post('/delete-test-database', (req, res, next) ->
     username = req.authorization.basic.username
     password = req.authorization.basic.password
-    if req.body?.databaseID?
-      databaseID = req.body.databaseID
-    else
-      databaseID = body
-    se.deleteDatabase(username, password, databaseID, (err, response) ->
+    se.deleteTestDatabase(username, password, (err, response) ->
       if err?
         res.send(err.code, err.body)
       else
@@ -47,10 +43,10 @@ module.exports = (server, se, callback) ->
     )
   )
 
-  server.post('/initialize-database', (req, res, next) ->
+  server.post('/initialize-test-database', (req, res, next) ->
     username = req.authorization.basic.username
     password = req.authorization.basic.password
-    se.initializeDatabase(username, password, (err, response) ->
+    se.initializeTestDatabase(username, password, (err, response) ->
       if err?
         res.send(err.code, err.body)
       else
