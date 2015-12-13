@@ -10,6 +10,11 @@ client = restify.createJsonClient({
   version: '*'
 })
 
+#client = restify.createJsonClient({
+#  url: 'http://temporalize.azurewebsites.net',
+#  version: '*'
+#})
+
 client.basicAuth(username, password)
 
 user =
