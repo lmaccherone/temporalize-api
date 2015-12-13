@@ -11,10 +11,13 @@ module.exports = class StorageEngine
   
   ###
 
-  constructor: (userConfig, callback) ->
+  constructor: (userConfig, autoInitialize = true, callback) ->
     ###
 
     ###
+    unless callback?
+      callback = autoInitialize
+      autoInitialize = true
     unless userConfig?
       userConfig = {}
     config = JSON.parse(JSON.stringify(userConfig))  # Make a clone
@@ -55,6 +58,26 @@ module.exports = class StorageEngine
     @readConfigRetries = 0
 #    @lastTimeConfigWasRead = new Date()
 
+    secondLevelPartitions = {}
+    secondLevelPartitions[@firstSecondLevelID] = {id: @firstSecondLevelID}
+    topLevelPartitions = {}
+    topLevelPartitions[@firstTopLevelID] = {id: @firstTopLevelID, secondLevelPartitions}
+    partitionConfig = {topLevelPartitions, topLevelLookupMap: {'default': @firstTopLevelID}}
+    @storageEngineConfig =
+      id: 'storage-engine-config',  # There is only one of these so we've hard-coded the id.
+      mode: 'RUNNING',
+      lastValidFrom: @LOWEST_DATE_STRING,
+      partitionConfig: partitionConfig
+
+    if autoInitialize
+      @_initialize(config, callback)
+    else
+      callback(null, this)
+
+  _initialize: (config, callback) ->
+    unless callback?
+      callback = config
+      config = {}
     # Get client
     if config.wrappedClient?
       @client = wrappedClient
@@ -64,10 +87,6 @@ module.exports = class StorageEngine
         new WrappedClient(@_client)
       else
         @client = new WrappedClient()
-
-    @_initializeDatabase(callback)
-
-  _initializeDatabase: (callback) ->
     # Unless it already exists, create first database
     @_debug("Checking existence or creating database: #{@firstTopLevelID}")
     @client.createDatabase({id: @firstTopLevelID}, (err, response) =>
@@ -131,8 +150,8 @@ module.exports = class StorageEngine
     if process.env.NODE_ENV is 'production'
       return callback("initializePartition is not supported in production")
     if username is process.env.TEMPORALIZE_USERNAME and password is process.env.TEMPORALIZE_PASSWORD
-      @terminate = false  # TODO: This is not thread safe. It could attempt an operation before the database is ready. Consider moving @terminate=false into _initializeDatabase, but make sure that we fix the tests that set @terminate=true at the beginngin of execution, if there are any.
-      @_initializeDatabase((err, result) ->
+      @terminate = false  # TODO: This is not thread safe. It could attempt an operation before the database is ready. Consider moving @terminate=false into _initialize, but make sure that we fix the tests that set @terminate=true at the beginngin of execution, if there are any.
+      @_initialize((err, result) ->
         if err?
           callback(err)
         else
@@ -161,7 +180,7 @@ module.exports = class StorageEngine
   _debug: (message, content, content2) ->
     # TODO: Add logging here. Current favorite is https://github.com/trentm/node-bunyan to Loggly
     if @debug or process.env.NODE_ENV isnt 'production'
-      console.log(message)
+      console.log(new Date().toISOString(), message)
     if @debug
       if content?
         console.log(JSON.stringify(content, null, 2))
@@ -217,16 +236,6 @@ module.exports = class StorageEngine
     @client.readDocument(getDocLink(@firstTopLevelID, @firstSecondLevelID, 'storage-engine-config'), (err, response, header) =>
       if err? and err.code is 404  # Not found so creating default config
         @_debug("#{getDocLink(@firstTopLevelID, @firstSecondLevelID, 'storage-engine-config')} not found. Creating a default config", header)
-        secondLevelPartitions = {}
-        secondLevelPartitions[@firstSecondLevelID] = {id: @firstSecondLevelID}
-        topLevelPartitions = {}
-        topLevelPartitions[@firstTopLevelID] = {id: @firstTopLevelID, secondLevelPartitions}
-        partitionConfig = {topLevelPartitions, topLevelLookupMap: {'default': @firstTopLevelID}}
-        @storageEngineConfig =
-          id: 'storage-engine-config',  # There is only one of these so we've hard-coded the id.
-          mode: 'RUNNING',
-          lastValidFrom: @LOWEST_DATE_STRING,
-          partitionConfig: partitionConfig
         @_debug('Setting @storageEngineConfig', @storageEngineConfig)
         @_writeConfig(() =>
           @_readConfigContinuously()
@@ -255,7 +264,7 @@ module.exports = class StorageEngine
         callback(err)
         return
       else
-        @_debug('Success: wrote @storageEngineConfig to database', response, header)
+        @_debug('Successfully wrote @storageEngineConfig to database', response, header)
         if callback?
           callback()
     )

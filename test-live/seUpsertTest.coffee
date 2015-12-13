@@ -1,6 +1,6 @@
 path = require('path')
 StorageEngine = require(path.join('..', 'src', 'StorageEngine'))
-{getLink, WrappedClient} = require('documentdb-utils')
+common = require(path.join(__dirname, 'common'))
 
 se = null
 client = null
@@ -8,6 +8,7 @@ client = null
 config =
   firstTopLevelID: 'dev-test-database'
   firstSecondLevelID: 'dev-test-collection'
+  refreshConfigMS: 1000
   terminate: false
   debug: false
 
@@ -24,14 +25,7 @@ session = null
 
 exports.upsertTest =
 
-  setUp: (callback) ->
-    urlConnection = process.env.DOCUMENT_DB_URL
-    masterKey = process.env.DOCUMENT_DB_KEY
-    auth = {masterKey}
-    client = new WrappedClient(urlConnection, auth)
-    client.deleteTestPartition(getLink(config.firstTopLevelID), () ->
-      callback()
-    )
+  setUp: common.getSESetUp(config)
 
   theTest: (test) ->
 
@@ -102,6 +96,8 @@ exports.upsertTest =
                       test.ok(result)
                       test.ok(not se.sessionCacheByID[session.id]?)
 
+                      se.terminate = true
+
                       test.done()
                     )
                   )
@@ -113,13 +109,4 @@ exports.upsertTest =
       )
     )
 
-  tearDown: (callback) ->
-    f = () ->
-      client.deleteTestPartition(getLink(config.firstTopLevelID), (err, response) ->
-        if err?
-          console.dir(err)
-          throw new Error("Got error trying to delete test database")
-        callback()
-      )
-    se.terminate = true
-    setTimeout(f, config.refreshConfigMS + 500)
+  tearDown: common.getSETearDown(config)

@@ -6,8 +6,8 @@ StorageEngine = require(path.join('..', 'src', 'StorageEngine'))
 config =
   firstTopLevelID: 'dev-test-database'
   firstSecondLevelID: 'dev-test-collection'
-  refreshConfigMS: 1000
-  terminate: false
+  refreshConfigMS: 10000
+  terminate: true
   cacheSelfLinks: false
   debug: false
 
@@ -16,19 +16,9 @@ client = null
 
 exports.resolverAndLinkTest =
 
-  setUp: (callback) ->
-    urlConnection = process.env.DOCUMENT_DB_URL
-    masterKey = process.env.DOCUMENT_DB_KEY
-    auth = {masterKey}
-    client = new WrappedClient(urlConnection, auth)
-    client.deleteTestPartition(getLink(config.firstTopLevelID), () ->
-      callback()
-    )
-
   theTest: (test) ->
 
-    se = new StorageEngine(config, () =>
-      console.log('got here')
+    se = new StorageEngine(config, false, (err, se) ->
       expected = ['dbs/dev-test-database/colls/dev-test-collection']
       test.deepEqual(se._resolveToListOfPartitions(), expected)
       test.deepEqual(se._resolveToListOfPartitions('anything'), expected)
@@ -121,14 +111,3 @@ exports.resolverAndLinkTest =
 
       test.done()
     )
-
-  tearDown: (callback) ->
-    f = () ->
-      client.deleteTestPartition(getLink(config.firstTopLevelID), (err, response) ->
-        if err?
-          console.dir(err)
-          throw new Error("Got error trying to delete test database")
-        callback()
-      )
-    se.terminate = true
-    setTimeout(f, config.refreshConfigMS + 500)

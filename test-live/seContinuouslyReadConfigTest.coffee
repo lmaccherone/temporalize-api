@@ -1,9 +1,8 @@
 path = require('path')
 StorageEngine = require(path.join('..', 'src', 'StorageEngine'))
-{getLink, WrappedClient} = require('documentdb-utils')
+common = require(path.join(__dirname, 'common'))
 
 se = null
-client = null
 
 config =
   firstTopLevelID: 'dev-test-database'
@@ -14,21 +13,15 @@ config =
 
 exports.continuouslyReadTest =
 
-  setUp: (callback) ->
-    urlConnection = process.env.DOCUMENT_DB_URL
-    masterKey = process.env.DOCUMENT_DB_KEY
-    auth = {masterKey}
-    client = new WrappedClient(urlConnection, auth)
-    client.deleteTestPartition(getLink(config.firstTopLevelID), () =>
-      callback()
-    )
+  setUp: common.getSESetUp(config)
 
   theTest: (test) ->
+    console.log('starting test')
     config.refreshConfigMS = 1000
-    se = new StorageEngine(config, () =>
+    se = new StorageEngine(config, () ->
       start = new Date()
       count = 0
-      se.readConfigContinuouslyEventHandler = () =>
+      se.readConfigContinuouslyEventHandler = () ->
         count++
         if count is 3
           se.terminate = true
@@ -38,9 +31,4 @@ exports.continuouslyReadTest =
           test.done()
     )
 
-  tearDown: (callback) ->
-    f = () ->
-      client.deleteTestPartition(getLink(config.firstTopLevelID), () ->
-        callback()
-      )
-    setTimeout(f, config.refreshConfigMS + 500)
+  tearDown: common.getSETearDown(config)

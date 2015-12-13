@@ -1,4 +1,6 @@
+path = require('path')
 restify = require('restify')
+common = require(path.join(__dirname, 'common'))
 
 username = process.env.TEMPORALIZE_USERNAME
 password = process.env.TEMPORALIZE_PASSWORD
@@ -21,21 +23,12 @@ user =
 
 session = null
 
+firstUpsert = {_TenantID: 'a', _EntityID: 1, a: 1, c: 3}
+secondUpsert = {_TenantID: 'a', _EntityID: 1, a: 10, b: 20, c: null}
+
 module.exports =
 
-  setUp: (callback) ->
-    client.post('/delete-partition', {}, (err, req, res, obj) ->
-      if err?
-        throw new Error(err)
-      else
-        client.post('/initialize-partition', {}, (err, req, res, obj) ->
-          if err?
-            throw new Error(err)
-          else
-            console.log("Partition initialized for test")
-            callback()
-        )
-    )
+  setUp: common.getSetUp(client)
 
   someDocs: (test) ->
     client.post('/login', {}, (err, req, res, obj) ->
@@ -45,23 +38,31 @@ module.exports =
       client.post('/upsert-user', {sessionID: session.id, user: user}, (err, req, res, obj) ->
         if err?
           console.dir(err)
-          throw new Error("Got unexpeced error trying to login")
+          throw new Error("Got unexpeced error trying to upsert-user")
 
         test.ok(!obj.password)
         for key, value of user
           unless key is 'password'
             test.deepEqual(obj[key], value)
 
-        test.done()
+        client.basicAuth(user.username, user.password)
+        client.post('/login', (err, req, res, obj) ->
+          if err?
+            console.dir(err)
+            throw new Error("Got unexpeced error trying to login as normal user")
+          session = obj
+          client.post('/upsert', {sessionID: session.id, upsert: firstUpsert}, (err, req, res, obj) ->
+            first = obj
+            test.equal(first.a, 1)
+            test.equal(first.c, 3)
+            test.ok(not first.b?)
+
+            test.done()
+          )
+        )
       )
     )
 
-  tearDown: (callback) ->
-    client.post('/delete-partition', (err, req, res, obj) ->
-      if err?
-        throw new Error(err)
-      else
-        console.log("Test partition deleted")
-        callback()
-    )
+  tearDown: common.getTearDown(client)
+
 
