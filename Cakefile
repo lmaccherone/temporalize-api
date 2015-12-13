@@ -1,5 +1,6 @@
 fs = require('fs')
 spawnSync = require('child_process').spawnSync
+path = require('path')
 
 endsWith = (s, suffix) ->
   s.indexOf(suffix, s.length - suffix.length) isnt -1
@@ -33,7 +34,7 @@ task('watch', 'Uses nodemon to restart server every time it senses a file change
 
 task('compile', 'Compile CoffeeScript source files to JavaScript', () ->
   process.chdir(__dirname)
-  folders = ['.', 'sprocs', 'src']
+  folders = ['.', 'src']
   for folder in folders
     pathToCompile = path.join(__dirname, folder)
     contents = fs.readdirSync(pathToCompile)
@@ -43,7 +44,7 @@ task('compile', 'Compile CoffeeScript source files to JavaScript', () ->
 )
 
 task('clean', 'Deletes .js and .map files', () ->
-  folders = ['.', 'sprocs', 'src']
+  folders = ['.', 'src']
   for folder in folders
     pathToClean = path.join(__dirname, folder)
     contents = fs.readdirSync(pathToClean)
