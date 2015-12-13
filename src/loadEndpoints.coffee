@@ -25,6 +25,12 @@ module.exports = (server, se, callback) ->
     se.login(username, password, getStandardCallback(req, res, next))
   )
 
+  server.post('/query', (req, res, next) ->
+    sessionID = req.body.sessionID
+    query = req.body.query
+    se.query(sessionID, query, getStandardCallback(req, res, next))
+  )
+
   server.post('/upsert-user', (req, res, next) ->
     sessionID = req.body.sessionID
     user = req.body.user

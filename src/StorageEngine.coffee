@@ -20,7 +20,7 @@ module.exports = class StorageEngine
       autoInitialize = true
     unless userConfig?
       userConfig = {}
-    config = JSON.parse(JSON.stringify(userConfig))  # Make a clone
+    config = _.cloneDeep(userConfig)
 
     # Check the environment
     @environment = process.env.NODE_ENV
@@ -518,7 +518,7 @@ module.exports = class StorageEngine
           # TODO: If none of the fields are different, do nothing
           @_debug("Found old version for #{@secondLevelPartitionField}: #{upsert[@secondLevelPartitionField]}.")
           oldVersion = response[0]
-          newVersion = JSON.parse(JSON.stringify(oldVersion))
+          newVersion = _.cloneDeep(oldVersion)
           delete newVersion.id
           newVersion._PreviousValues = {}
           nothingChanged = true
@@ -556,7 +556,7 @@ module.exports = class StorageEngine
 
         else  # No old version. Just need to add.
           @_debug("No old version for #{@secondLevelPartitionField}: #{upsert[@secondLevelPartitionField]}. Just need to add.")
-          upsertCopy = JSON.parse(JSON.stringify(upsert))
+          upsertCopy = _.cloneDeep(upsert)
           upsertCopy._PreviousValues = {}
           for key, value of upsertCopy
             unless key in @SYSTEM_FIELDS
@@ -801,7 +801,7 @@ module.exports = class StorageEngine
       config.maxItemCount = -1
 
     if config.query?
-      modifiedQuery = JSON.parse(JSON.stringify(config.query))
+      modifiedQuery = _.cloneDeep(config.query)
     else
       modifiedQuery = {}
 

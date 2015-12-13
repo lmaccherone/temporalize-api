@@ -52,12 +52,33 @@ module.exports =
             throw new Error("Got unexpeced error trying to login as normal user")
           session = obj
           client.post('/upsert', {sessionID: session.id, upsert: firstUpsert}, (err, req, res, obj) ->
+
             first = obj
             test.equal(first.a, 1)
             test.equal(first.c, 3)
             test.ok(not first.b?)
 
-            test.done()
+            client.post('/upsert', {sessionID: session.id, upsert: secondUpsert}, (err, req, res, obj) ->
+
+              query =
+                topLevelPartitionKey: 'a'
+                secondLevelPartitionKey: 1
+                fields: ["a", "b", "c"]
+
+              client.post('/query', {sessionID: session.id, query}, (err, req, res, obj) ->
+                if err?
+                  console.dir(err)
+                  throw new Error("Got unexected error trying to execute query")
+
+                test.equal(obj.all.length, 2)
+                test.deepEqual(obj.all[0], { a: 1, c: 3, _TenantID: 'a' })
+                test.deepEqual(obj.all[1], { a: 10, b: 20, _TenantID: 'a' })
+
+                test.ok(obj.stats?)
+
+                test.done()
+              )
+            )
           )
         )
       )
