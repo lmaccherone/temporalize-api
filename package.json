@@ -5,7 +5,7 @@
   "main": "server",
   "scripts": {
     "test": "nodeunit",
-    "postinstall": "coffee --compile server.coffee src"
+    "postinstall": "node_modules/.bin/coffee --compile server.coffee src"
   },
   "keywords": [
     "time-series",
