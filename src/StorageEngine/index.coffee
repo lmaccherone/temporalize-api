@@ -2,7 +2,11 @@ HashRing = require('hashring')
 crypto = require('crypto')
 zxcvbn = require('zxcvbn')
 path = require('path')
+lumenize = require('lumenize')
 {WrappedClient, getLink, getDocLink, _, async, getGUID, sqlFromMongo} = require('documentdb-utils')
+
+seQuery = require(path.join(__dirname, 'query'))
+superUserOnly = require(path.join(__dirname, 'superUserOnly'))
 
 module.exports = class StorageEngine
   ###
@@ -50,6 +54,7 @@ module.exports = class StorageEngine
     @sessionCacheByID = {}
     @sessionCacheByUsername = {}
     @_purgeSessionsContinuously()
+    @pauseConfigReading = false
 
     @HIGHEST_DATE_STRING = '9999-01-01T00:00:00.000Z'
     @LOWEST_DATE_STRING = '0001-01-01T00:00:00.000Z'
@@ -86,7 +91,7 @@ module.exports = class StorageEngine
         @_client = config.client
         new WrappedClient(@_client)
       else
-        @client = new WrappedClient()
+        @client = new WrappedClient(null, null, null, 'Strong')
     # Unless it already exists, create first database
     @_debug("Checking existence or creating database: #{@firstTopLevelID}")
     @client.createDatabase({id: @firstTopLevelID}, (err, response) =>
@@ -116,7 +121,6 @@ module.exports = class StorageEngine
             @_readOrCreateInitialConfig((err, response, headers) =>
               username = process.env.TEMPORALIZE_USERNAME
               password = process.env.TEMPORALIZE_PASSWORD
-              console.log(username, password)
               if username? and password?
                 query = {username}
                 @_query({query, asOf: 'LATEST'}, (err, users, userHeaders) =>
@@ -147,34 +151,6 @@ module.exports = class StorageEngine
         )
     )
 
-  initializePartition: (username, password, callback) ->
-    if process.env.NODE_ENV is 'production'
-      return callback("initializePartition is not supported in production")
-    if username is process.env.TEMPORALIZE_USERNAME and password is process.env.TEMPORALIZE_PASSWORD
-      @terminate = false  # TODO: This is not thread safe. It could attempt an operation before the database is ready. Consider moving @terminate=false into _initialize, but make sure that we fix the tests that set @terminate=true at the beginngin of execution, if there are any.
-      @_initialize((err, result) ->
-        if err?
-          callback(err)
-        else
-          callback(null, result)
-      )
-    else
-      callback({code: 401, body: "Invalid login for initializeTestPartition"})
-
-  deletePartition: (username, password, callback) ->
-    if process.env.NODE_ENV is 'production'
-      return callback("deletePartition is not supported in production")
-    @terminate = true
-    if username is process.env.TEMPORALIZE_USERNAME and password is process.env.TEMPORALIZE_PASSWORD
-      @client.deleteDatabase(getLink(@firstTopLevelID), (err, result) ->
-        if err? and err.code isnt 404
-          callback(err)
-        else
-          callback(null, result)
-      )
-    else
-      callback({code: 401, body: "Invalid login for deletePartition"})
-
   _delay = (ms, func) ->
     setTimeout(func, ms)
 
@@ -204,10 +180,13 @@ module.exports = class StorageEngine
       if err?
         callback(err)
       else
-        @storageEngineConfig = response
         @readConfigRetries = 0
-        @lastTimeConfigWasRead = new Date()
-        @_debug('Successfully retrieved @storageEngineConfig', @storageEngineConfig, header)
+        if @pauseConfigReading
+          @_debug('Config not retrieved because @pauseConfigReading was set')
+        else
+          @storageEngineConfig = response
+          @lastTimeConfigWasRead = new Date()
+          @_debug('Successfully retrieved @storageEngineConfig', @storageEngineConfig, header)
         callback(@storageEngineConfig)
     )
 
@@ -260,7 +239,9 @@ module.exports = class StorageEngine
       retriesLeft = null
     unless retriesLeft?
       retriesLeft = 3
+    @pauseConfigReading = true
     @client.upsertDocument(getLink(@firstTopLevelID, @firstSecondLevelID), @storageEngineConfig, (err, response, header) =>
+      @pauseConfigReading = false
       if err?
         callback(err)
         return
@@ -591,10 +572,7 @@ module.exports = class StorageEngine
           return
     )
     else
-      callback({
-        code: 401,
-        body: "Missing sessionID"
-      })
+      callback({code: 401, body: "Missing sessionID"})
 
   _upsertUser: (user, password, callback) =>
     unless callback?
@@ -728,104 +706,14 @@ module.exports = class StorageEngine
             )
     return f
 
-  query: (sessionID, config, callback) ->  # POST /query  Maybe later support GET and url parameters
-    ###
-    sessionID
+  query: seQuery.query
+  _query: seQuery._query
 
-    [topLevelPartitionKey]
+  initializePartition: superUserOnly.initializePartition
+  deletePartition: superUserOnly.deletePartition
 
-    [secondLevelPartitionKey] You must provide either a topLevelPartitionKey and a secondLevelPartitionKey or a query or all three.  When a
-    secondLevelPartitionKey is provided, the query defaults to {@secondLevelPartitionField: secondLevelPartitionKey}
-    which will return the entire history of this one entity. If a query and a secondLevelPartitionKey is provided, the
-    query is modified with {$and: [{@secondLevelPartitionField: secondLevelPartitionKey}, <oldQuery>]}.
-
-    [query] Required unless a secondLevelPartitionKey is provided. MongoDB-like format.
-
-    [fields] If no fields are specified, all are included.
-
-    [maxItemCount] default: -1. To limit a query to a certain number of documents, provide a limit value. The response will
-    include a continuation token that you can pass in to get the next page. Alternatively, you can do paging with a
-    query clause on _ValidFrom but be careful to remove the last few documents of each page with the same _ValidFrom
-    and use the prior _ValidFrom in the query clause for your next page. We may support this mode of paging
-    automatically in the future.
-
-    [continuationTokens] (not implemented) This is an object. The key is the partitionLink. The value is the continuation token for that partition.
-
-    [includeDeleted] (not implemented) default: false. Unless includeDeleted == true, {_Deleted: {$exists: false}} is added to the $and clause.
-
-    [asOf] When a asOf parameter is provided, the query will be done for that moment
-      in time. ISO-8601 time formats are supported even partial ones like '2015-01' which specifies midnight GMT on
-      January 1, 2015. Specifying asOf = 'LATEST' or 'latest' or 'LAST' or 'last' will use the lastValidTo value. Unless a asOf is
-      specified, the query is modified with {$and: [<oldQuery>, {_ValidFrom: {$lte: lastValidFrom}]} to prevent
-      partially completed transactions from being returned. When the global @temporalPolicy is set to 'NONE', the
-      default asOf is 'LATEST'.
-    ###
-
-    # TODO: Upgrade to call _getSession and _query in parallel
-    @_getSession(sessionID, (err, session) =>
-      if err?
-        callback(err)
-      else
-        @_query(config, (err, result) =>
-          if err?
-            callback(err)
-          authorizedForAll = true
-          unauthorizedTenantIDs = []
-          for row in result.all
-            unless row[@topLevelPartitionField]?
-              callback({code: 400, body: "Found documents without #{@topLevelPartitionField} field. Database corruption has likely occured"})
-            unless row[@topLevelPartitionField] in session.user.tenantIDsICanRead
-              unauthorizedTenantIDs.push(row[@topLevelPartitionField])
-              authorizedForAll = false
-          if authorizedForAll
-            callback(err, result)
-          else
-            callback({code: 401, body: "Unauthorized for TenantIDs indicated in unauthorizedTenantIDs", unauthorizedTenantIDs})
-        )
-    )
-
-  _query: (config, callback) ->
-    if @storageEngineConfig.mode is 'STOPPED'
-      msg = "Storage engine is currently stopped"
-      callback(msg)
-      return msg
-
-    if config.query? and not _.isPlainObject(config.query)
-      callback({code: 400, body: "config.query must be a plain object when calling query()."})
-      return
-
-    unless config.query? or (config.secondLevelPartitionKey? and config.topLevelPartitionKey?)
-      callback({code: 400, body: "Must provide config.query or (config.topLevelPartitionKey and config.secondLevelPartitionKey) when calling query()."})
-      return
-
-    unless config.maxItemCount?
-      config.maxItemCount = -1
-
-    if config.query?
-      modifiedQuery = _.cloneDeep(config.query)
-    else
-      modifiedQuery = {}
-
-    if config.fields?
-      config.fields = _.union(config.fields, [@topLevelPartitionField])
-
-    if config.secondLevelPartitionKey?
-      modifiedQuery[@secondLevelPartitionField] = config.secondLevelPartitionKey
-
-    if config.asOf?
-      if config.asOf in ['LATEST', 'LAST', 'latest', 'last']
-        config.asOf = @storageEngineConfig.lastValidFrom
-      modifiedQuery._ValidTo = {$gt: config.asOf}
-      modifiedQuery._ValidFrom = {$lte: config.asOf}
-    else
-      modifiedQuery._ValidFrom = {$lte: @storageEngineConfig.lastValidFrom}
-
-    querySpec = {query: modifiedQuery, fields: config.fields}
-
-    queryOptions = {maxItemCount: config.maxItemCount}
-
-    partitionList = @_resolveToListOfPartitions(config.topLevelPartitionKey, config.secondLevelPartitionKey)
-    @client.queryDocumentsArrayMulti(partitionList, querySpec, queryOptions, callback)
-    return
 
   undelete: () ->
+
+  timeInStateCalculator: (sessionID, config, callback) ->
+    @query(sessionID, config.query, callback)
