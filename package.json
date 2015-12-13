@@ -20,13 +20,12 @@
     "url": "http://github.com/lmaccherone/temporalize-api.git"
   },
   "devDependencies": {
-    "coffee-script": "^1.9.3",
     "documentdb-mock": "^0.3.0",
     "nodemon": "^1.8.1",
-    "nodeunit": "^0.9.1",
-    "rewire": "^2.3.4"
+    "nodeunit": "^0.9.1"
   },
   "dependencies": {
+    "coffee-script": "^1.9.3",
     "documentdb-utils": "^0.7.1",
     "hashring": "^3.2.0",
     "lumenize": "^0.9.12",

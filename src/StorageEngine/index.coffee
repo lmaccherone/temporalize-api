@@ -233,12 +233,7 @@ module.exports = class StorageEngine
           callback(null, @storageEngineConfig, header)
     )
 
-  _writeConfig: (retriesLeft, callback) =>
-    unless callback?
-      callback = retriesLeft
-      retriesLeft = null
-    unless retriesLeft?
-      retriesLeft = 3
+  _writeConfig: (callback) =>
     @pauseConfigReading = true
     @client.upsertDocument(getLink(@firstTopLevelID, @firstSecondLevelID), @storageEngineConfig, (err, response, header) =>
       @pauseConfigReading = false
@@ -396,157 +391,7 @@ module.exports = class StorageEngine
 
     # Call startHandler
 
-  upsert: (sessionID, upserts, temporalPolicy = @temporalPolicy, callback) =>  # POST /upsert-entity {body: <entity field updates>}
-    ###
-    This is a true incremental update. It will start with the most recent version of this entity and apply the field
-    changes specified in the upsert call. If you want to remove a field, you must specify that field as null.
-    Note, the null values are not stored so keep that in mind when composing queries.
-    In general, you'll want to use {<fieldName>: $exists} rather than {$not: {<fieldName>: $isNull}}.
 
-    The default temporalPolicy can be overridden for each call to upsertEntity. If there is an entity type that you don't
-    want history for but others where you do, then you can control that on calls to upsert. Be careful to be consistent within
-    an entity type. More commonly the temporalPolicy is set for the entire system during instantiation.
-
-    Depending upon the temporalPolicy, entities are annotated with the Temporalize _ValidFrom/_ValidTo Richard Snodgrass
-    mono-temporal data model.
-
-    Note, transaction support for when _TemporalPolicy is 'NONE' is implemented by maintaining the _ValidFrom and _ValidTo
-    fields just as it would for when it's not 'NONE', however, a 30-90 second delay is set to come back and delete
-    the old version. This means that there are 30-90 seconds where two version of the entity exist. So, queries
-    against these sort of entities should be made with asOf = 'LATEST'. No effort is made to enforce this except
-    when the global @temporalPolicy is set to 'NONE'. In that case, the default for asOf on queries becomes 'LATEST'.
-    ###
-    if sessionID?
-      @_getSession(sessionID, (err, session) =>
-        for upsert in upserts
-          unless session.user._IsTemporalizeSuperUser or upsert[@topLevelPartitionField] in session.user.tenantIDsICanWrite
-            transactionHandler({
-              code: 401,
-              body: "User with username: #{session.user.username} does not have permission to write to tenant with id: #{upsert[@topLevelPartitionField]}"
-            })
-            return
-        @_upsert(upserts, temporalPolicy, callback)
-      )
-    else
-      transactionHandler({code: 401, body: "Missing sessionID"})
-
-  _upsert: (upserts, temporalPolicy = @temporalPolicy, callback) =>
-    unless callback?
-      callback = temporalPolicy
-      temporalPolicy = null
-    unless temporalPolicy?
-      temporalPolicy = @temporalPolicy
-    if @terminate
-      callback({code: 400, body: 'Cannot call _upsert when @terminate is true'})
-    else
-      unless _.isArray(upserts)
-        upserts = [upserts]
-
-      @_readConfig(() =>
-        t = new Date().toISOString()
-        if t > @storageEngineConfig.lastValidFrom
-          transactionTimeString = t
-        else
-          transactionTimeString = new Date(new Date(@storageEngineConfig.lastValidFrom).valueOf() + 1).toISOString()
-        transactionID = getGUID()
-        transaction = {id: transactionID, callback, requestCount: 0, responseCount: 0, transactionTimeString, se: this}
-        transactionHandler = @_getTransactionHandler(transaction)
-        transaction.transactionHandler = transactionHandler
-        transaction.entityIDsForThisTransaction = []
-
-        for upsert in upserts
-          @_upsertOne(upsert, transaction)
-      )
-
-  _upsertOne: (upsert, transaction) =>
-#          if upsert._IsTemporalizeUser  # TODO: Somehow prevent updates to _IsTemoralizeUser without going through upsertUser
-#            break
-    transactionHandler = transaction.transactionHandler
-    unless upsert[@topLevelPartitionField]?
-      transactionHandler({code: 400, body: "Every row in upserts must have a #{@topLevelPartitionField} field"})
-      return
-    unless upsert[@secondLevelPartitionField]?
-      transactionHandler({code: 400, body: "Every row in upserts must have a #{@secondLevelPartitionField} field"})
-      return
-    if upsert[@secondLevelPartitionField] in transaction.entityIDsForThisTransaction
-      transactionHandler({code: 400, body: "#{@secondLevelPartitionField} must be not be duplicated in upsert list"})
-      return
-    else
-      transaction.entityIDsForThisTransaction.push(upsert[@secondLevelPartitionField])
-
-    upsert._CreationTransactionID = transaction.id
-    upsert._ValidFrom = transaction.transactionTimeString
-    upsert._ValidTo = @HIGHEST_DATE_STRING
-
-    query = {_ValidTo: @HIGHEST_DATE_STRING}
-    query[@secondLevelPartitionField] = upsert[@secondLevelPartitionField]
-#    queryString = sqlFromMongo(queryObject, 'c', '*')
-    querySpec = {query}
-    partitionList = @_resolveToListOfPartitions(upsert[@topLevelPartitionField], upsert[@secondLevelPartitionField])
-    if partitionList.length isnt 1
-      transactionHandler({code: 403, body: "ERROR: partitionList.length for upsert() call should be 1. It is: #{partitionList.length}"})
-      return
-    collectionLink = partitionList[0]
-    @_debug("Looking for documents with existing _EntityID with: `#{JSON.stringify(querySpec)}`")
-    @client.queryDocuments(collectionLink, querySpec).toArray((err, response, header) =>
-      if err?
-        transactionHandler({code: err.code, body: "Got '#{err.body}' calling @client.queryDocuments() from within upsert"})
-        return
-      else  # No err
-        if response.length > 1
-          transactionHandler({code: 403, body: "Got more than one document with _ValidTo = #{@HIGHEST_DATE_STRING} for #{@secondLevelPartitionField} = #{upsert[@secondLevelPartitionField]}"})
-          return
-        else if response.length is 1  # Found an old version of this entity. Upgrade.
-          # TODO: If none of the fields are different, do nothing
-          @_debug("Found old version for #{@secondLevelPartitionField}: #{upsert[@secondLevelPartitionField]}.")
-          oldVersion = response[0]
-          newVersion = _.cloneDeep(oldVersion)
-          delete newVersion.id
-          newVersion._PreviousValues = {}
-          nothingChanged = true
-          for key, value of upsert
-            if upsert[key]?  # This is intentionally not value? because value might be null
-              newVersion[key] = value
-              if value isnt oldVersion[key]
-                nothingChanged = false
-            else
-              delete newVersion[key]
-            # Set previous values. TODO: Upgrade to support deep references _PreviousValues: {'rootField.subField': 'old value'} Probably a bad idea to support arrays as they could be large
-            unless key in @SYSTEM_FIELDS
-              unless JSON.stringify(oldVersion[key]) is JSON.stringify(newVersion[key])
-                if oldVersion[key]?
-                  newVersion._PreviousValues[key] = oldVersion[key]
-                else
-                  newVersion._PreviousValues[key] = null
-          if nothingChanged
-            transactionHandler(null, oldVersion)
-          else
-            @client.createDocument(collectionLink, newVersion, (err, response, header) =>
-              if err?
-                transactionHandler({code: err.code, body: "Got '#{err.body}' calling @client.createDocument() from within upsert"})
-                return
-              else
-                newDocument = response
-                @_debug("Done writing new version for #{@secondLevelPartitionField}: #{upsert[@secondLevelPartitionField]}. Starting to update old version.")
-                oldVersion._ValidTo = transaction.transactionTimeString
-                oldVersion._UpdateTransactionID = transaction.id
-                requestOptions = {accessCondition: {type: 'IfMatch', condition: oldVersion._etag}}
-                documentLink = collectionLink + "/docs/#{oldVersion.id}"
-                transaction.requestCount++
-                @client.replaceDocument(documentLink, oldVersion, requestOptions, transactionHandler)
-            )
-
-        else  # No old version. Just need to add.
-          @_debug("No old version for #{@secondLevelPartitionField}: #{upsert[@secondLevelPartitionField]}. Just need to add.")
-          upsertCopy = _.cloneDeep(upsert)
-          upsertCopy._PreviousValues = {}
-          for key, value of upsertCopy
-            unless key in @SYSTEM_FIELDS
-              if value?
-                upsertCopy._PreviousValues[key] = null
-          transaction.requestCount++
-          @client.createDocument(collectionLink, upsertCopy, transactionHandler)
-    )
 
   upsertUser: (sessionID, user, password, callback) =>  # GET /upsert-user
     # You can either provide the password as a field inside the user entity or as a seperate parameter
@@ -702,9 +547,164 @@ module.exports = class StorageEngine
             if transaction.response.length is 1
               transaction.response = transaction.response[0]
             se._writeConfig((err) ->
-              transaction.callback(err, transaction.response, transaction.headers)
+              if err?
+                f({code: 400, body: "Error writing config at end of transaction handler"})
+              else
+                transaction.callback(err, transaction.response, transaction.headers)
             )
     return f
+
+  upsert: (sessionID, upserts, temporalPolicy = @temporalPolicy, callback) =>  # POST /upsert-entity {body: <entity field updates>}
+    ###
+    This is a true incremental update. It will start with the most recent version of this entity and apply the field
+    changes specified in the upsert call. If you want to remove a field, you must specify that field as null.
+    Note, the null values are not stored so keep that in mind when composing queries.
+    In general, you'll want to use {<fieldName>: $exists} rather than {$not: {<fieldName>: $isNull}}.
+
+    The default temporalPolicy can be overridden for each call to upsertEntity. If there is an entity type that you don't
+    want history for but others where you do, then you can control that on calls to upsert. Be careful to be consistent within
+    an entity type. More commonly the temporalPolicy is set for the entire system during instantiation.
+
+    Depending upon the temporalPolicy, entities are annotated with the Temporalize _ValidFrom/_ValidTo Richard Snodgrass
+    mono-temporal data model.
+
+    Note, transaction support for when _TemporalPolicy is 'NONE' is implemented by maintaining the _ValidFrom and _ValidTo
+    fields just as it would for when it's not 'NONE', however, a 30-90 second delay is set to come back and delete
+    the old version. This means that there are 30-90 seconds where two version of the entity exist. So, queries
+    against these sort of entities should be made with asOf = 'LATEST'. No effort is made to enforce this except
+    when the global @temporalPolicy is set to 'NONE'. In that case, the default for asOf on queries becomes 'LATEST'.
+    ###
+    if sessionID?
+      @_getSession(sessionID, (err, session) =>
+        for upsert in upserts
+          unless session.user._IsTemporalizeSuperUser or upsert[@topLevelPartitionField] in session.user.tenantIDsICanWrite
+            transactionHandler({
+              code: 401,
+              body: "User with username: #{session.user.username} does not have permission to write to tenant with id: #{upsert[@topLevelPartitionField]}"
+            })
+            return
+        @_upsert(upserts, temporalPolicy, callback)
+      )
+    else
+      transactionHandler({code: 401, body: "Missing sessionID"})
+
+  _upsert: (upserts, temporalPolicy = @temporalPolicy, callback) =>
+    unless callback?
+      callback = temporalPolicy
+      temporalPolicy = null
+    unless temporalPolicy?
+      temporalPolicy = @temporalPolicy
+    if @terminate
+      callback({code: 400, body: 'Cannot call _upsert when @terminate is true'})
+    else
+      unless _.isArray(upserts)
+        upserts = [upserts]
+
+      @_readConfig(() =>
+        t = new Date().toISOString()
+        if t > @storageEngineConfig.lastValidFrom
+          transactionTimeString = t
+        else
+          transactionTimeString = new Date(new Date(@storageEngineConfig.lastValidFrom).valueOf() + 1).toISOString()
+        transactionID = getGUID()
+        transaction = {id: transactionID, callback, requestCount: 0, responseCount: 0, transactionTimeString, se: this}
+        transactionHandler = @_getTransactionHandler(transaction)
+        transaction.transactionHandler = transactionHandler
+        transaction.entityIDsForThisTransaction = []
+
+        for upsert in upserts
+          @_upsertOne(upsert, transaction)
+      )
+
+  _upsertOne: (upsert, transaction) =>
+#          if upsert._IsTemporalizeUser  # TODO: Somehow prevent updates to _IsTemoralizeUser without going through upsertUser
+#            break
+    transactionHandler = transaction.transactionHandler
+    unless upsert[@topLevelPartitionField]?
+      transactionHandler({code: 400, body: "Every row in upserts must have a #{@topLevelPartitionField} field"})
+      return
+    unless upsert[@secondLevelPartitionField]?
+      transactionHandler({code: 400, body: "Every row in upserts must have a #{@secondLevelPartitionField} field"})
+      return
+    if upsert[@secondLevelPartitionField] in transaction.entityIDsForThisTransaction
+      transactionHandler({code: 400, body: "#{@secondLevelPartitionField} must be not be duplicated in upsert list"})
+      return
+    else
+      transaction.entityIDsForThisTransaction.push(upsert[@secondLevelPartitionField])
+
+    upsert._CreationTransactionID = transaction.id
+    upsert._ValidFrom = transaction.transactionTimeString
+    upsert._ValidTo = @HIGHEST_DATE_STRING
+
+    query = {_ValidTo: @HIGHEST_DATE_STRING}
+    query[@secondLevelPartitionField] = upsert[@secondLevelPartitionField]
+    #    queryString = sqlFromMongo(queryObject, 'c', '*')
+    querySpec = {query}
+    partitionList = @_resolveToListOfPartitions(upsert[@topLevelPartitionField], upsert[@secondLevelPartitionField])
+    if partitionList.length isnt 1
+      transactionHandler({code: 403, body: "ERROR: partitionList.length for upsert() call should be 1. It is: #{partitionList.length}"})
+      return
+    collectionLink = partitionList[0]
+    @_debug("Looking for documents with existing _EntityID with: `#{JSON.stringify(querySpec)}`")
+    @client.queryDocuments(collectionLink, querySpec).toArray((err, response, header) =>
+      if err?
+        transactionHandler({code: err.code, body: "Got '#{err.body}' calling @client.queryDocuments() from within upsert"})
+        return
+      else  # No err
+        if response.length > 1
+          transactionHandler({code: 403, body: "Got more than one document with _ValidTo = #{@HIGHEST_DATE_STRING} for #{@secondLevelPartitionField} = #{upsert[@secondLevelPartitionField]}"})
+          return
+        else if response.length is 1  # Found an old version of this entity. Upgrade.
+# TODO: If none of the fields are different, do nothing
+          @_debug("Found old version for #{@secondLevelPartitionField}: #{upsert[@secondLevelPartitionField]}.")
+          oldVersion = response[0]
+          newVersion = _.cloneDeep(oldVersion)
+          delete newVersion.id
+          newVersion._PreviousValues = {}
+          nothingChanged = true
+          for key, value of upsert
+            if upsert[key]?  # This is intentionally not value? because value might be null
+              newVersion[key] = value
+              if value isnt oldVersion[key]
+                nothingChanged = false
+            else
+              delete newVersion[key]
+            # Set previous values. TODO: Upgrade to support deep references _PreviousValues: {'rootField.subField': 'old value'} Probably a bad idea to support arrays as they could be large
+            unless key in @SYSTEM_FIELDS
+              unless JSON.stringify(oldVersion[key]) is JSON.stringify(newVersion[key])
+                if oldVersion[key]?
+                  newVersion._PreviousValues[key] = oldVersion[key]
+                else
+                  newVersion._PreviousValues[key] = null
+          if nothingChanged
+            transactionHandler(null, oldVersion)
+          else
+            @client.createDocument(collectionLink, newVersion, (err, response, header) =>
+              if err?
+                transactionHandler({code: err.code, body: "Got '#{err.body}' calling @client.createDocument() from within upsert"})
+                return
+              else
+                newDocument = response
+                @_debug("Done writing new version for #{@secondLevelPartitionField}: #{upsert[@secondLevelPartitionField]}. Starting to update old version.")
+                oldVersion._ValidTo = transaction.transactionTimeString
+                oldVersion._UpdateTransactionID = transaction.id
+                requestOptions = {accessCondition: {type: 'IfMatch', condition: oldVersion._etag}}
+                documentLink = collectionLink + "/docs/#{oldVersion.id}"
+                transaction.requestCount++
+                @client.replaceDocument(documentLink, oldVersion, requestOptions, transactionHandler)
+            )
+
+        else  # No old version. Just need to add.
+          @_debug("No old version for #{@secondLevelPartitionField}: #{upsert[@secondLevelPartitionField]}. Just need to add.")
+          upsertCopy = _.cloneDeep(upsert)
+          upsertCopy._PreviousValues = {}
+          for key, value of upsertCopy
+            unless key in @SYSTEM_FIELDS
+              if value?
+                upsertCopy._PreviousValues[key] = null
+          transaction.requestCount++
+          @client.createDocument(collectionLink, upsertCopy, transactionHandler)
+    )
 
   query: seQuery.query
   _query: seQuery._query
