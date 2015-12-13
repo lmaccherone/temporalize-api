@@ -27,7 +27,7 @@
     "rewire": "^2.3.4"
   },
   "dependencies": {
-    "documentdb-utils": "^0.7.0",
+    "documentdb-utils": "^0.7.1",
     "hashring": "^3.2.0",
     "lumenize": "^0.9.12",
     "restify": "^4.0.3",
