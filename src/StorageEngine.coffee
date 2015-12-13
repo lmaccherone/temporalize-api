@@ -116,6 +116,7 @@ module.exports = class StorageEngine
             @_readOrCreateInitialConfig((err, response, headers) =>
               username = process.env.TEMPORALIZE_USERNAME
               password = process.env.TEMPORALIZE_PASSWORD
+              console.log(username, password)
               if username? and password?
                 query = {username}
                 @_query({query, asOf: 'LATEST'}, (err, users, userHeaders) =>

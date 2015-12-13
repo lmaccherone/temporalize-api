@@ -162,6 +162,7 @@
                   var password, query, username;
                   username = process.env.TEMPORALIZE_USERNAME;
                   password = process.env.TEMPORALIZE_PASSWORD;
+                  console.log(username, password);
                   if ((username != null) && (password != null)) {
                     query = {
                       username: username
