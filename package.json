@@ -29,6 +29,7 @@
     "documentdb-utils": "^0.7.1",
     "hashring": "^3.2.0",
     "lumenize": "^0.9.12",
+    "marked": "^0.3.5",
     "restify": "^4.0.3",
     "zxcvbn": "^4.2.0"
   }

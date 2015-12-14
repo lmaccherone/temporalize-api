@@ -25,7 +25,7 @@ module.exports = (memo) ->
     ],
     Priority: [1, 2, 3, 4]
     Severity: [1, 2, 3, 4]
-    Points: [null, 0.5, 1, 2, 3, 5, 8, 13]
+    Points: [0, 0.5, 1, 2, 3, 5, 8, 13]  # TODO: Test with first value null
 
     _TenantID: ['a']
 

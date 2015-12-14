@@ -56,26 +56,31 @@ module.exports =
                 throw new Error("Got unexpeced error trying to login as normal user")
               session = obj
 
-              granularity = 'hour'
-              tz = 'America/Chicago'
-              today = new Date()
+              allowedValues = ['Backlog', 'Ready', 'In Progress', 'Accepted', 'Shipped']
 
-              tisConfig =
-                query: {Priority: 1}
-                granularity: granularity
-                tz: tz
-                endBefore: today.toISOString()
-                uniqueIDField: '_EntityID'
-                trackLastValueForTheseFields: ['_ValidTo', 'Points']
-                stateFilter: {State: {$in: ['In Progress', 'Accepted']}}
+              metrics = [
+                {f: 'groupBySum', field: 'Points', groupByField: 'State', allowedValues: allowedValues},
+                {f: 'groupByCount', groupByField: 'State', allowedValues: allowedValues, prefix: 'Count '},
+              ]
 
-              console.log(JSON.stringify(tisConfig, null, 2))
+              holidays = [
+                {month: 7, day: 4}  # Made up holiday to test knockout
+              ]
 
-              client.post('/time-in-state', {sessionID: session.id, config: tisConfig}, (err, req, res, obj) ->
+              calculatorConfig =
+                query: {Priority: {$in: [1, 2, 3]}}
+                metrics: metrics
+                granularity: 'day'
+                tz: 'America/Chicago'
+                holidays: holidays
+
+              console.log(JSON.stringify(calculatorConfig, null, 2))
+
+              client.post('/time-series', {sessionID: session.id, config: calculatorConfig}, (err, req, res, obj) ->
                 if err?
                   console.dir(err)
-                  throw new Error("Got unexected error trying to time-in-state")
-                row.days = row.ticks / 8 for row in obj
+                  throw new Error("Got unexected error trying to time-series")
+
                 console.log(obj)
 
                 test.done()

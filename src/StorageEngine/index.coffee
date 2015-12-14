@@ -837,22 +837,6 @@ module.exports = class StorageEngine
     else
       callback({code: 401, body: "Invalid login for deletePartition"})
 
-  timeInState: (sessionID, config, callback) =>
-    # TODO: Allow for permissions to see aggregations that might be looser than read (take union of TenantIDsICanRead and TenantIDsICanAggregate)
-    modifiedQuery = {$and: [config.query, config.stateFilter]}  # TODO: Add a function to documentdb-utils to merge two filters
-    queryConfig = {query: modifiedQuery}
-    @query(sessionID, queryConfig, (err, result) ->
-      if err?
-        return callback(err.code, err.body)
-      tisc = new lumenize.TimeInStateCalculator(config)
-      today = new Date()
-      startOn = new Date(today.valueOf() - 30*1000*60*60*24).toISOString()
-      endBefore = today.toISOString()
-      tisc.addSnapshots(result.all, startOn, endBefore)
-
-      callback(null, tisc.getResults())
-    )
-
   loadSprocs: (scriptsDirectory, callback) =>  # TODO: Get rid of this and automatically do it in _initialize. Change timeInStateTest and delete from loadEndpoints, and remove call in server.coffee
     # TODO: Should be restricted to super user
     collectionLinks = @_resolveToListOfPartitions()
@@ -860,15 +844,48 @@ module.exports = class StorageEngine
     config = {scriptsDirectory, client, collectionLinks}
     return loadSprocs(config, callback)
 
-  executeSproc: (sprocName, callback) =>
+  executeSproc: (sprocName, memo, callback) =>
     @_debug("Executing sproc #{sprocName} on all paritions")
     # TODO: Should be restricted to super user
     collectionLinks = @_resolveToListOfPartitions()
     sprocLinks = getLinkArray(collectionLinks, sprocName)
-    entitiesDesired = 100
-    startDate = "2015-11-13"
     @_debug("Executing sproc #{sprocName} with these links: #{sprocLinks}")
-    @client.executeStoredProcedureMulti(sprocLinks, {startDate, entitiesDesired}, callback)
+    @client.executeStoredProcedureMulti(sprocLinks, memo, callback)
 
   undelete: () ->
     # Do nothing
+
+  timeInState: (sessionID, config, callback) =>
+    # TODO: Allow for permissions to see aggregations that might be looser than read (take union of TenantIDsICanRead and TenantIDsICanAggregate)
+    modifiedQuery = {$and: [config.query, config.stateFilter]}  # TODO: Add a function to documentdb-utils to merge two filters
+    queryConfig = {query: modifiedQuery}
+    @query(sessionID, queryConfig, (err, result) ->
+      if err?
+        return callback(err.code, err.body)
+      calculator = new lumenize.TimeInStateCalculator(config)
+      today = new Date()
+      startOn = new Date(today.valueOf() - 30*1000*60*60*24).toISOString()
+      endBefore = today.toISOString()
+      calculator.addSnapshots(result.all, startOn, endBefore)
+
+      callback(null, calculator.getResults())
+    )
+    
+  timeSeries: (sessionID, config, callback) =>
+    # TODO: Allow for permissions to see aggregations that might be looser than read (take union of TenantIDsICanRead and TenantIDsICanAggregate)
+    unless config.query?
+      config.query = {}
+    @query(sessionID, {query: config.query}, (err, result) ->
+      console.log(JSON.stringify(result.all, null, 2))
+      if err?
+        return callback(err.code, err.body)
+      calculator = new lumenize.TimeSeriesCalculator(config)
+      today = new Date()
+      startOn = new Date(today.valueOf() - 30*1000*60*60*24).toISOString()
+      endBefore = today.toISOString()
+#      sortedResults = _.sortBy(result.all, '_ValidFrom')  # TODO: This sorting should really be done inside of Lumenize
+      sortedResults = result.all
+      calculator.addSnapshots(sortedResults, startOn, endBefore)
+
+      callback(null, calculator.getResults())
+    )

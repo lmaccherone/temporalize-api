@@ -1,4 +1,5 @@
 
+.play/
 .idea/
 node_modules/
 *.coffee

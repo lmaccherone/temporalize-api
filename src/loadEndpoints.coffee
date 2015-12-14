@@ -59,8 +59,9 @@ module.exports = (server, se, callback) ->
   )
 
   server.post('/execute-sproc', (req, res, next) ->  # TODO: Only allow for super user
+    memo = req.body.memo
     if req.body.sprocName?
-      se.executeSproc(req.body.sprocName, getStandardCallback(req, res, next))
+      se.executeSproc(req.body.sprocName, memo, getStandardCallback(req, res, next))
     else
       res.send(400, "Must provide a sprocName field in the body")
   )
@@ -84,6 +85,25 @@ module.exports = (server, se, callback) ->
             res.send(err.code, err.body)
           else
             se.timeInState(result.id, config, getStandardCallback(req, res, next))
+        )
+    else
+      res.send(400, "Must provide a config field in the body")
+  )
+
+  server.post('/time-series', (req, res, next) ->
+    sessionID = req.body.sessionID
+    config = req.body.config
+    if config?
+      if sessionID?
+        se.timeSeries(sessionID, config, getStandardCallback(req, res, next))
+      else
+        username = req.authorization.basic.username or req.body.username  # TODO: Upgrade other endpoints to do this auto login
+        password = req.authorization.basic.password or req.body.password
+        se.login(username, password, (err, result) ->
+          if err?
+            res.send(err.code, err.body)
+          else
+            se.timeSeries(result.id, config, getStandardCallback(req, res, next))
         )
     else
       res.send(400, "Must provide a config field in the body")
