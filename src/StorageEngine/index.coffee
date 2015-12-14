@@ -876,7 +876,6 @@ module.exports = class StorageEngine
     unless config.query?
       config.query = {}
     @query(sessionID, {query: config.query}, (err, result) ->
-      console.log(JSON.stringify(result.all, null, 2))
       if err?
         return callback(err.code, err.body)
       calculator = new lumenize.TimeSeriesCalculator(config)

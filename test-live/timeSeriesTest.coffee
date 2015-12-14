@@ -63,25 +63,23 @@ module.exports =
                 {f: 'groupByCount', groupByField: 'State', allowedValues: allowedValues, prefix: 'Count '},
               ]
 
-              holidays = [
-                {month: 7, day: 4}  # Made up holiday to test knockout
-              ]
+              holidays = [{month: 7, day: 4}]  # Made up holiday to test knockout
 
               calculatorConfig =
+                uniqueIDField: '_EntityID'
                 query: {Priority: {$in: [1, 2, 3]}}
                 metrics: metrics
                 granularity: 'day'
                 tz: 'America/Chicago'
                 holidays: holidays
 
-              console.log(JSON.stringify(calculatorConfig, null, 2))
-
               client.post('/time-series', {sessionID: session.id, config: calculatorConfig}, (err, req, res, obj) ->
                 if err?
                   console.dir(err)
                   throw new Error("Got unexected error trying to time-series")
 
-                console.log(obj)
+                test.ok(obj.seriesData?)
+                test.ok(obj.seriesData.length > 10)
 
                 test.done()
               )

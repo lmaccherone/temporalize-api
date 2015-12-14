@@ -20,24 +20,14 @@ port = process.env.PORT or 1338
 server = restify.createServer(
   name: 'temporalize'
   version: "0.1.0"
+
+# TODO: Custom formatters are turned off because they messed up the json response
+
   formatters: {
-    'application/json': (req, res, body, cb) ->
-      if body instanceof Error
-        res.statusCode = body.statusCode or 500
-        if body.body
-          body = body.body
-        else
-          body = {message: body.message}
+    'application/javascript; q=0.1': restify.formatters['application/javascript; q=0.1']
+    'application/json; q=0.4': restify.formatters['application/json; q=0.4']
 
-      else if Buffer.isBuffer(body)
-        body = body.toString('base64')
-
-      data = JSON.stringify(body) + 'something'
-      res.setHeader('Content-Length', Buffer.byteLength(data))
-
-      return cb(null, data)
-
-    'text/plain': (req, res, body, cb) ->
+    'text/plain; q=0.3': (req, res, body, cb) ->
       if body instanceof Error
         res.statusCode = body.statusCode or 500
         body = body.message
@@ -57,7 +47,7 @@ server = restify.createServer(
       res.setHeader('Content-Length', Buffer.byteLength(body))
       return cb(null, body)
 
-    'text/html': (req, res, body, cb) ->
+    'text/html; q=0.5': (req, res, body, cb) ->
       if body instanceof Error
         res.statusCode = body.statusCode or 500
         body = body.message
