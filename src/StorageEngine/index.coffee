@@ -753,7 +753,9 @@ module.exports = class StorageEngine
           for row in result.all
             unless row[@topLevelPartitionField]?
               callback({code: 400, body: "Found documents without #{@topLevelPartitionField} field. Database corruption has likely occured"})
-            unless row[@topLevelPartitionField] in session.user.tenantIDsICanRead
+            if session.user._IsTemporalizeSuperUser or row[@topLevelPartitionField] in session.user.tenantIDsICanRead
+
+            else
               unauthorizedTenantIDs.push(row[@topLevelPartitionField])
               authorizedForAll = false
           if authorizedForAll
@@ -766,7 +768,7 @@ module.exports = class StorageEngine
   _query: (config, callback) ->
     if @storageEngineConfig.mode is 'STOPPED'
       msg = "Storage engine is currently stopped"
-      callback(msg)
+      callback(msg)  # TODO: Upgrade to code/body
       return msg
 
     if config.query? and not _.isPlainObject(config.query)
@@ -800,11 +802,10 @@ module.exports = class StorageEngine
       modifiedQuery._ValidFrom = {$lte: @storageEngineConfig.lastValidFrom}
 
     querySpec = {query: modifiedQuery, fields: config.fields}
-    @_debug("Sending query: #{JSON.stringify(querySpec)}")
-
-    queryOptions = {maxItemCount: config.maxItemCount}
-
     partitionList = @_resolveToListOfPartitions(config.topLevelPartitionKey, config.secondLevelPartitionKey)
+    queryOptions = {maxItemCount: config.maxItemCount}
+    @_debug("Sending query: #{JSON.stringify(querySpec)} to #{JSON.stringify(partitionList)} with options: #{JSON.stringify(queryOptions)}")
+
     @client.queryDocumentsArrayMulti(partitionList, querySpec, queryOptions, callback)
     return
 
@@ -837,9 +838,20 @@ module.exports = class StorageEngine
       callback({code: 401, body: "Invalid login for deletePartition"})
 
   timeInState: (sessionID, config, callback) =>
-    # TODO: Confirm session here and then call _query
-    queryConfig = {query: config.query}
-    @query(sessionID, queryConfig, callback)
+    # TODO: Allow for permissions to see aggregations that might be looser than read (take union of TenantIDsICanRead and TenantIDsICanAggregate)
+    modifiedQuery = {$and: [config.query, config.stateFilter]}  # TODO: Add a function to documentdb-utils to merge two filters
+    queryConfig = {query: modifiedQuery}
+    @query(sessionID, queryConfig, (err, result) ->
+      if err?
+        return callback(err.code, err.body)
+      tisc = new lumenize.TimeInStateCalculator(config)
+      today = new Date()
+      startOn = new Date(today.valueOf() - 30*1000*60*60*24).toISOString()
+      endBefore = today.toISOString()
+      tisc.addSnapshots(result.all, startOn, endBefore)
+
+      callback(null, tisc.getResults())
+    )
 
   loadSprocs: (scriptsDirectory, callback) =>  # TODO: Get rid of this and automatically do it in _initialize. Change timeInStateTest and delete from loadEndpoints, and remove call in server.coffee
     # TODO: Should be restricted to super user

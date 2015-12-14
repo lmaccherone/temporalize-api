@@ -73,7 +73,20 @@ module.exports = (server, se, callback) ->
   server.post('/time-in-state', (req, res, next) ->
     sessionID = req.body.sessionID
     config = req.body.config
-    se.timeInState(sessionID, config, getStandardCallback(req, res, next))
+    if config?
+      if sessionID?
+        se.timeInState(sessionID, config, getStandardCallback(req, res, next))
+      else
+        username = req.authorization.basic.username or req.body.username  # TODO: Upgrade other endpoints to do this auto login
+        password = req.authorization.basic.password or req.body.password
+        se.login(username, password, (err, result) ->
+          if err?
+            res.send(err.code, err.body)
+          else
+            se.timeInState(result.id, config, getStandardCallback(req, res, next))
+        )
+    else
+      res.send(400, "Must provide a config field in the body")
   )
 
   callback()

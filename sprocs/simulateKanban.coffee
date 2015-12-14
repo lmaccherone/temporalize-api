@@ -10,6 +10,8 @@ module.exports = (memo) ->
   unless memo.entitiesDesired?
     memo.entitiesDesired = 100
 
+  memo.startDate = new Date(memo.startDate).toISOString()
+
   HIGHEST_DATE_STRING = '9999-01-01T00:00:00.000Z'
   LOWEST_DATE_STRING = '0001-01-01T00:00:00.000Z'
 

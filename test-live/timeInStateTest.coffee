@@ -55,12 +55,34 @@ module.exports =
                 console.dir(err)
                 throw new Error("Got unexpeced error trying to login as normal user")
               session = obj
-              tisConfig = {query: {Priority: 1}}
+
+              granularity = 'hour'
+              tz = 'America/Chicago'
+              today = new Date()
+
+              tisConfig =
+                query: {Priority: 1}
+                granularity: granularity
+                tz: tz
+                endBefore: today.toISOString()
+#                validFromField: 'from'
+#                validToField: 'to'
+                uniqueIDField: '_EntityID'
+                trackLastValueForTheseFields: ['_ValidTo', 'Points']
+                stateFilter: {State: {$in: ['In Progress', 'Accepted']}}
+
+              console.log(JSON.stringify(tisConfig, null, 2))
+
               client.post('/time-in-state', {sessionID: session.id, config: tisConfig}, (err, req, res, obj) ->
                 if err?
                   console.dir(err)
                   throw new Error("Got unexected error trying to time-in-state")
-                console.log('got here')
+                row.days = row.ticks / 8 for row in obj
+                console.log(obj)
+
+# 2015-12-14T04:41:34.316Z Sending query: {"query":{"$and":[{"Priority":1},{"State":{"$in":["In Progress","Accepted"]}}],"_ValidFrom":{"$lte":"2015-12-14T04:41:32.739Z"}}} to ["dbs/development-A/colls/1"] with options: {"maxItemCount":-1}
+# 2015-12-14T04:43:24.563Z Sending query: {"query":{"$and":[{"Priority":3},{"State":{"$in":["In Progress","Accepted"]}}],"_ValidFrom":{"$lte":"2015-12-14T04:42:56.419Z"}}} to ["dbs/development-A/colls/1"] with options: {"maxItemCount":-1}
+
                 test.done()
               )
             )
