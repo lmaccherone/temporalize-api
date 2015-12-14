@@ -58,5 +58,23 @@ module.exports = (server, se, callback) ->
     se.initializePartition(username, password, getStandardCallback(req, res, next))
   )
 
+  server.post('/execute-sproc', (req, res, next) ->  # TODO: Only allow for super user
+    if req.body.sprocName?
+      se.executeSproc(req.body.sprocName, getStandardCallback(req, res, next))
+    else
+      res.send(400, "Must provide a sprocName field in the body")
+  )
+
+  server.post('/load-sprocs', (req, res, next) ->  # TODO: Only allow for super user
+    sprocsDirectory = path.join(__dirname, '..', 'sprocs')
+    se.loadSprocs(sprocsDirectory, getStandardCallback(req, res, next))
+  )
+
+  server.post('/time-in-state', (req, res, next) ->
+    sessionID = req.body.sessionID
+    config = req.body.config
+    se.timeInState(sessionID, config, getStandardCallback(req, res, next))
+  )
+
   callback()
 

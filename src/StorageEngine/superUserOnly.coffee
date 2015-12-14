@@ -1,4 +1,4 @@
-
+{getLink} = require('documentdb-utils')
 
 module.exports =
 

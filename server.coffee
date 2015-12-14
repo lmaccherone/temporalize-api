@@ -21,16 +21,17 @@ server.use(restify.bodyParser({mapParams: false}))
 server.use(restify.queryParser({mapParams: false}))
 server.locals = {}
 
-sprocDirectory = path.join(__dirname, 'sprocs')
-# Load sprocs once we have them
 
 se = new StorageEngine(seConfig, () ->
-  loadEndpoints(server, se, (err) ->
-    if err?
-      console.dir(err)
-      throw new Error("Got error trying to loadEndpoints")
-    server.listen(port, () ->
-      console.log("%s listening at %s", server.name, server.url)
+  sprocsDirectory = path.join(__dirname, 'sprocs')
+  se.loadSprocs(sprocsDirectory, (err, result) ->
+    loadEndpoints(server, se, (err) ->
+      if err?
+        console.dir(err)
+        throw new Error("Got error trying to loadEndpoints")
+      server.listen(port, () ->
+        console.log("%s listening at %s", server.name, server.url)
+      )
     )
   )
 )

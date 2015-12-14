@@ -8,15 +8,16 @@ module.exports =
 
   theTest: (test) ->
 
-    entitiesDesired = 1
+    entitiesDesired = 100
     startDate = "2015-11-13"
     mock.package({startDate, entitiesDesired})
 
     memo = mock.lastBody
-    console.log(memo)
-#    test.deepEqual(memo, {remaining: 0, totalCount: 3, countForThisRun: 3, stillQueueing: true, continuation: null})
-#    test.equal(mock.rows.length, entitiesDesired)
-    for key in ['ProjectHierarchy', 'Priority', 'Severity', 'Points', 'State']
-      test.ok(mock.lastRow.hasOwnProperty(key))
+#    console.log(mock.rows)
+    console.log(memo.wip)
+    test.ok(5 < memo.wip.Ready <= 10)
+    test.ok(3 < memo.wip['In Progress'] <= 5)
+    test.ok(3 < memo.wip['Accepted'] <= 10)
+    test.ok(memo.wip.Shipped > 7)
 
     test.done()

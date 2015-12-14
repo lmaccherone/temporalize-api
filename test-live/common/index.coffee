@@ -11,11 +11,13 @@ client = new WrappedClient(urlConnection, auth)
 module.exports =
   getSetUp: (client) ->
     setUp = (callback) ->
+      console.log('starting setUp')
       client.basicAuth(username, password)
       client.post('/delete-partition', {}, (err, req, res, obj) ->
         if err?
           throw new Error(err)
         else
+          console.log('Partition deleted')
           client.post('/initialize-partition', {}, (err, req, res, obj) ->
             if err?
               throw new Error(err)

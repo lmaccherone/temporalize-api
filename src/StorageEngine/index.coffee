@@ -3,10 +3,10 @@ crypto = require('crypto')
 zxcvbn = require('zxcvbn')
 path = require('path')
 lumenize = require('lumenize')
-{WrappedClient, getLink, getDocLink, _, async, getGUID, sqlFromMongo} = require('documentdb-utils')
+{WrappedClient, getLink, getLinkArray, getDocLink, _, async, getGUID, loadSprocs} = require('documentdb-utils')
 
-seQuery = require(path.join(__dirname, 'query'))
-superUserOnly = require(path.join(__dirname, 'superUserOnly'))
+#seQuery = require(path.join(__dirname, 'query'))
+#superUserOnly = require(path.join(__dirname, 'superUserOnly'))
 
 module.exports = class StorageEngine
   ###
@@ -91,7 +91,8 @@ module.exports = class StorageEngine
         @_client = config.client
         new WrappedClient(@_client)
       else
-        @client = new WrappedClient(null, null, null, 'Strong')
+        @client = new WrappedClient(null, null, null, 'Strong')  # TODO: Change to session consistency
+
     # Unless it already exists, create first database
     @_debug("Checking existence or creating database: #{@firstTopLevelID}")
     @client.createDatabase({id: @firstTopLevelID}, (err, response) =>
@@ -706,14 +707,156 @@ module.exports = class StorageEngine
           @client.createDocument(collectionLink, upsertCopy, transactionHandler)
     )
 
-  query: seQuery.query
-  _query: seQuery._query
+  query: (sessionID, config, callback) ->  # POST /query  Maybe later support GET and url parameters
+    ###
+    sessionID
 
-  initializePartition: superUserOnly.initializePartition
-  deletePartition: superUserOnly.deletePartition
+    [topLevelPartitionKey]
 
+    [secondLevelPartitionKey] You must provide either a topLevelPartitionKey and a secondLevelPartitionKey or a query or all three.  When a
+    secondLevelPartitionKey is provided, the query defaults to {@secondLevelPartitionField: secondLevelPartitionKey}
+    which will return the entire history of this one entity. If a query and a secondLevelPartitionKey is provided, the
+    query is modified with {$and: [{@secondLevelPartitionField: secondLevelPartitionKey}, <oldQuery>]}.
+
+    [query] Required unless a secondLevelPartitionKey is provided. MongoDB-like format.
+
+    [fields] If no fields are specified, all are included.
+
+    [maxItemCount] default: -1. To limit a query to a certain number of documents, provide a limit value. The response will
+    include a continuation token that you can pass in to get the next page. Alternatively, you can do paging with a
+    query clause on _ValidFrom but be careful to remove the last few documents of each page with the same _ValidFrom
+    and use the prior _ValidFrom in the query clause for your next page. We may support this mode of paging
+    automatically in the future.
+
+    [continuationTokens] (not implemented) This is an object. The key is the partitionLink. The value is the continuation token for that partition.
+
+    [includeDeleted] (not implemented) default: false. Unless includeDeleted == true, {_Deleted: {$exists: false}} is added to the $and clause.
+
+    [asOf] When a asOf parameter is provided, the query will be done for that moment
+      in time. ISO-8601 time formats are supported even partial ones like '2015-01' which specifies midnight GMT on
+      January 1, 2015. Specifying asOf = 'LATEST' or 'latest' or 'LAST' or 'last' will use the lastValidTo value. Unless a asOf is
+      specified, the query is modified with {$and: [<oldQuery>, {_ValidFrom: {$lte: lastValidFrom}]} to prevent
+      partially completed transactions from being returned. When the global @temporalPolicy is set to 'NONE', the
+      default asOf is 'LATEST'.
+    ###
+
+# TODO: Upgrade to call _getSession and _query in parallel
+    @_getSession(sessionID, (err, session) =>
+      if err?
+        callback(err)
+      else
+        @_query(config, (err, result) =>
+          if err?
+            callback(err)
+          authorizedForAll = true
+          unauthorizedTenantIDs = []
+          for row in result.all
+            unless row[@topLevelPartitionField]?
+              callback({code: 400, body: "Found documents without #{@topLevelPartitionField} field. Database corruption has likely occured"})
+            unless row[@topLevelPartitionField] in session.user.tenantIDsICanRead
+              unauthorizedTenantIDs.push(row[@topLevelPartitionField])
+              authorizedForAll = false
+          if authorizedForAll
+            callback(err, result)
+          else
+            callback({code: 401, body: "Unauthorized for TenantIDs indicated in unauthorizedTenantIDs", unauthorizedTenantIDs})
+        )
+    )
+
+  _query: (config, callback) ->
+    if @storageEngineConfig.mode is 'STOPPED'
+      msg = "Storage engine is currently stopped"
+      callback(msg)
+      return msg
+
+    if config.query? and not _.isPlainObject(config.query)
+      callback({code: 400, body: "config.query must be a plain object when calling query()."})
+      return
+
+    unless config.query? or (config.secondLevelPartitionKey? and config.topLevelPartitionKey?)
+      callback({code: 400, body: "Must provide config.query or (config.topLevelPartitionKey and config.secondLevelPartitionKey) when calling query()."})
+      return
+
+    unless config.maxItemCount?
+      config.maxItemCount = -1
+
+    if config.query?
+      modifiedQuery = _.cloneDeep(config.query)
+    else
+      modifiedQuery = {}
+
+    if config.fields?
+      config.fields = _.union(config.fields, [@topLevelPartitionField])
+
+    if config.secondLevelPartitionKey?
+      modifiedQuery[@secondLevelPartitionField] = config.secondLevelPartitionKey
+
+    if config.asOf?
+      if config.asOf in ['LATEST', 'LAST', 'latest', 'last']
+        config.asOf = @storageEngineConfig.lastValidFrom
+      modifiedQuery._ValidTo = {$gt: config.asOf}
+      modifiedQuery._ValidFrom = {$lte: config.asOf}
+    else
+      modifiedQuery._ValidFrom = {$lte: @storageEngineConfig.lastValidFrom}
+
+    querySpec = {query: modifiedQuery, fields: config.fields}
+    @_debug("Sending query: #{JSON.stringify(querySpec)}")
+
+    queryOptions = {maxItemCount: config.maxItemCount}
+
+    partitionList = @_resolveToListOfPartitions(config.topLevelPartitionKey, config.secondLevelPartitionKey)
+    @client.queryDocumentsArrayMulti(partitionList, querySpec, queryOptions, callback)
+    return
+
+  initializePartition: (username, password, callback) =>
+    if process.env.NODE_ENV is 'production'
+      return callback("initializePartition is not supported in production")
+    if username is process.env.TEMPORALIZE_USERNAME and password is process.env.TEMPORALIZE_PASSWORD
+      @terminate = false  # TODO: This is a potential race condition. It could attempt an operation before the database is ready. Consider moving @terminate=false into _initialize, but make sure that we fix the tests that set @terminate=true at the beginngin of execution, if there are any.
+      @_initialize((err, result) =>
+        if err?
+          callback(err)
+        else
+          callback(null, result)
+      )
+    else
+      callback({code: 401, body: "Invalid login for initializeTestPartition"})
+
+  deletePartition: (username, password, callback) =>
+    if process.env.NODE_ENV is 'production'
+      return callback("deletePartition is not supported in production")
+    @terminate = true
+    if username is process.env.TEMPORALIZE_USERNAME and password is process.env.TEMPORALIZE_PASSWORD
+      @client.deleteDatabase(getLink(@firstTopLevelID), (err, result) =>
+        if err? and err.code isnt 404
+          callback(err)
+        else
+          callback(null, result)
+      )
+    else
+      callback({code: 401, body: "Invalid login for deletePartition"})
+
+  timeInState: (sessionID, config, callback) =>
+    # TODO: Confirm session here and then call _query
+    queryConfig = {query: config.query}
+    @query(sessionID, queryConfig, callback)
+
+  loadSprocs: (scriptsDirectory, callback) =>  # TODO: Get rid of this and automatically do it in _initialize. Change timeInStateTest and delete from loadEndpoints, and remove call in server.coffee
+    # TODO: Should be restricted to super user
+    collectionLinks = @_resolveToListOfPartitions()
+    client = @client
+    config = {scriptsDirectory, client, collectionLinks}
+    return loadSprocs(config, callback)
+
+  executeSproc: (sprocName, callback) =>
+    @_debug("Executing sproc #{sprocName} on all paritions")
+    # TODO: Should be restricted to super user
+    collectionLinks = @_resolveToListOfPartitions()
+    sprocLinks = getLinkArray(collectionLinks, sprocName)
+    entitiesDesired = 100
+    startDate = "2015-11-13"
+    @_debug("Executing sproc #{sprocName} with these links: #{sprocLinks}")
+    @client.executeStoredProcedureMulti(sprocLinks, {startDate, entitiesDesired}, callback)
 
   undelete: () ->
-
-  timeInStateCalculator: (sessionID, config, callback) ->
-    @query(sessionID, config.query, callback)
+    # Do nothing

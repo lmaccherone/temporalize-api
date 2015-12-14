@@ -35,52 +35,32 @@ module.exports =
 
   setUp: common.getSetUp(client)
 
-  someDocs: (test) ->
+  theTest: (test) ->
     client.post('/login', {}, (err, req, res, obj) ->
       if err?
         throw new Error("Got unexected error trying to login as superuser")
       session = obj
-      client.post('/upsert-user', {sessionID: session.id, user: user}, (err, req, res, obj) ->
-        if err?
-          console.dir(err)
-          throw new Error("Got unexpeced error trying to upsert-user")
-
-        test.ok(!obj.password)
-        for key, value of user
-          unless key is 'password'
-            test.deepEqual(obj[key], value)
-
-        client.basicAuth(user.username, user.password)
-        client.post('/login', (err, req, res, obj) ->
+      client.post('/load-sprocs', (err, req, res, obj) ->
+        client.post('/execute-sproc', {sprocName: 'simulateKanban'}, (err, req, res, obj) ->
           if err?
             console.dir(err)
-            throw new Error("Got unexpeced error trying to login as normal user")
-          session = obj
-          client.post('/upsert', {sessionID: session.id, upsert: firstUpsert}, (err, req, res, obj) ->
-
-            first = obj
-            test.equal(first.a, 1)
-            test.equal(first.c, 3)
-            test.ok(not first.b?)
-
-            client.post('/upsert', {sessionID: session.id, upsert: secondUpsert}, (err, req, res, obj) ->
-
-              query =
-                topLevelPartitionKey: 'a'
-                secondLevelPartitionKey: 1
-                fields: ["a", "b", "c"]
-
-              client.post('/query', {sessionID: session.id, query}, (err, req, res, obj) ->
+            throw new Error("Got unexected error trying to execute-sproc")
+          client.post('/upsert-user', {sessionID: session.id, user: user}, (err, req, res, obj) ->
+            if err?
+              console.dir(err)
+              throw new Error("Got unexpeced error trying to upsert-user")
+            client.basicAuth(user.username, user.password)
+            client.post('/login', (err, req, res, obj) ->
+              if err?
+                console.dir(err)
+                throw new Error("Got unexpeced error trying to login as normal user")
+              session = obj
+              tisConfig = {query: {Priority: 1}}
+              client.post('/time-in-state', {sessionID: session.id, config: tisConfig}, (err, req, res, obj) ->
                 if err?
                   console.dir(err)
-                  throw new Error("Got unexected error trying to execute query")
-
-                test.equal(obj.all.length, 2)
-                test.deepEqual(obj.all[0], { a: 1, c: 3, _TenantID: 'a' })
-                test.deepEqual(obj.all[1], { a: 10, b: 20, _TenantID: 'a' })
-
-                test.ok(obj.stats?)
-
+                  throw new Error("Got unexected error trying to time-in-state")
+                console.log('got here')
                 test.done()
               )
             )
