@@ -479,7 +479,7 @@ module.exports = class StorageEngine
         @_debug("Got error during login fetching user", err)
         callback(err)
       else if documents.length > 1
-        callback({code: 400, body: "Found more than one user with username: #{username}"})
+        callback({code: 400, body: "Found more than one user with username: #{username}. Database corruption is likely"})
       else if documents.length < 1
         callback({code: 401, body: "Couldn't find user with username: #{username}"})
       else if documents?

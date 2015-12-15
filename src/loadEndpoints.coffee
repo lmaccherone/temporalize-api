@@ -20,6 +20,17 @@ module.exports = (server, se, callback) ->
     res.send(200, {hello: 'world'})
   )
 
+  server.get('/what', (req, res, next) ->
+    variables = ["TEMPORALIZE_USERNAME", "TEMPORALIZE_PASSWORD", "DOCUMENT_DB_URL", "DOCUMENT_DB_KEY"]
+    reply = {}
+    for v in variables
+      reply[v] = process.env[v]
+
+    console.log(reply)
+    res.send(200, reply)
+    next()
+  )
+
   server.get(/\/?.*/, restify.serveStatic({
     directory: path.join('.', 'static'),
     default: 'index.html'
