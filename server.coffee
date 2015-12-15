@@ -82,7 +82,7 @@ se = new StorageEngine(seConfig, () ->
         console.dir(err)
         throw new Error("Got error trying to loadEndpoints")
       server.listen(port, () ->
-        console.log("%s listening at %s", server.name, server.url)
+        se._debug("#{server.name} listening at #{server.url}")
       )
     )
   )

@@ -56,6 +56,9 @@ module.exports = class StorageEngine
     @_purgeSessionsContinuously()
     @pauseConfigReading = false
 
+    @lastMessage = ''
+    @sameMessageCount = 1
+
     @HIGHEST_DATE_STRING = '9999-01-01T00:00:00.000Z'
     @LOWEST_DATE_STRING = '0001-01-01T00:00:00.000Z'
     @SYSTEM_FIELDS = ["id", "_ValidFrom", "_ValidTo", "_EntityID", "_TenantID", "_CreationTransactionID", "_UpdateTransactionID", "_PreviousValues"]
@@ -158,14 +161,21 @@ module.exports = class StorageEngine
   _debug: (message, content, content2) ->
     # TODO: Add logging here. Current favorite is https://github.com/trentm/node-bunyan to Loggly
     if @debug or process.env.NODE_ENV isnt 'production'
-      console.log(new Date().toISOString(), message)
+      if message is @lastMessage
+        @sameMessageCount++
+        process.stdout.write('\r')
+      else
+        @sameMessageCount = 1
+        process.stdout.write('\n')
+      process.stdout.write("#{new Date().toISOString()} #{message} (#{@sameMessageCount})")
+      @lastMessage = message
     if @debug
+      @sameMessage = ''
+      @sameMessageCount = 1
       if content?
-        console.log(JSON.stringify(content, null, 2))
-        console.log()
+        console.log('\n', JSON.stringify(content, null, 2))
       if content2?
-        console.log(JSON.stringify(content2, null, 2))
-        console.log()
+        console.log('\n', JSON.stringify(content2, null, 2))
 
   _handleIfError: (err, callback) ->
     if err?

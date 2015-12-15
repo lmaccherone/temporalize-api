@@ -5,7 +5,8 @@
   "main": "server.coffee",
   "scripts": {
     "test": "nodeunit",
-    "start": "coffee server.coffee"
+    "postinstall": "cake compile",
+    "start": "node server.js"
   },
   "keywords": [
     "time-series",
