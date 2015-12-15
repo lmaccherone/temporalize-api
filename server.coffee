@@ -20,9 +20,6 @@ port = process.env.PORT or 1338
 server = restify.createServer(
   name: 'temporalize'
   version: "0.1.0"
-
-# TODO: Custom formatters are turned off because they messed up the json response
-
   formatters: {
     'application/javascript; q=0.1': restify.formatters['application/javascript; q=0.1']
     'application/json; q=0.4': restify.formatters['application/json; q=0.4']
@@ -74,6 +71,7 @@ server.use(restify.acceptParser(server.acceptable))
 server.use(restify.authorizationParser())
 server.use(restify.bodyParser({mapParams: false}))
 server.use(restify.queryParser({mapParams: false}))
+server.use(restify.CORS({credentials: true}))
 server.locals = {}
 
 se = new StorageEngine(seConfig, () ->

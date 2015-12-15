@@ -2,6 +2,7 @@
 # TODO: Upgrade to accept parameters for databaseID and collectionID
 path = require('path')
 fs = require('fs')
+restify = require('restify')
 {getLink, getLinkArray} = require('documentdb-utils')
 
 module.exports = (server, se, callback) ->
@@ -18,6 +19,11 @@ module.exports = (server, se, callback) ->
   server.get('/hello', (req, res, next) ->
     res.send(200, {hello: 'world'})
   )
+
+  server.get(/\/?.*/, restify.serveStatic({
+    directory: path.join('.', 'static'),
+    default: 'index.html'
+  }))
 
   server.post('/login', (req, res, next) ->
     username = req.authorization.basic.username or req.body.username
