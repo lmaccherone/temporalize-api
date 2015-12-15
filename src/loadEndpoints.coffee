@@ -21,12 +21,19 @@ module.exports = (server, se, callback) ->
   )
 
   server.get('/env', (req, res, next) ->
-    reply = {}
-    for key, value of process.env
-      reply[key] = value
+    username = req.authorization.basic.username or req.body.username
+    password = req.authorization.basic.password or req.body.password
+    sysUsername = process.env.APPSETTING_TEMPORALIZE_USERNAME or process.env.TEMPORALIZE_USERNAME
+    sysPassword = process.env.APPSETTING_TEMPORALIZE_PASSWORD or process.env.TEMPORALIZE_PASSWORD
+    if username is sysUsername and password is sysPassword
+      reply = {}
+      for key, value of process.env
+        reply[key] = value
 
-    res.send(200, reply)
-    next()
+      res.send(200, reply)
+      next()
+    else
+      res.send(401, "Must provide super-user credentials for this operation")
   )
 
   server.get(/\/?.*/, restify.serveStatic({
@@ -63,28 +70,52 @@ module.exports = (server, se, callback) ->
   )
 
   server.post('/delete-partition', (req, res, next) ->
-    username = req.authorization.basic.username
-    password = req.authorization.basic.password
-    se.deletePartition(username, password, getStandardCallback(req, res, next))
+    username = req.authorization.basic.username or req.body.username
+    password = req.authorization.basic.password or req.body.password
+    sysUsername = process.env.APPSETTING_TEMPORALIZE_USERNAME or process.env.TEMPORALIZE_USERNAME
+    sysPassword = process.env.APPSETTING_TEMPORALIZE_PASSWORD or process.env.TEMPORALIZE_PASSWORD
+    if username is sysUsername and password is sysPassword
+      se.deletePartition(username, password, getStandardCallback(req, res, next))
+    else
+      res.send(401, "Must provide super-user credentials for this operation")
   )
 
   server.post('/initialize-partition', (req, res, next) ->
-    username = req.authorization.basic.username
-    password = req.authorization.basic.password
-    se.initializePartition(username, password, getStandardCallback(req, res, next))
-  )
-
-  server.post('/execute-sproc', (req, res, next) ->  # TODO: Only allow for super user
-    memo = req.body.memo
-    if req.body.sprocName?
-      se.executeSproc(req.body.sprocName, memo, getStandardCallback(req, res, next))
+    username = req.authorization.basic.username or req.body.username
+    password = req.authorization.basic.password or req.body.password
+    sysUsername = process.env.APPSETTING_TEMPORALIZE_USERNAME or process.env.TEMPORALIZE_USERNAME
+    sysPassword = process.env.APPSETTING_TEMPORALIZE_PASSWORD or process.env.TEMPORALIZE_PASSWORD
+    if username is sysUsername and password is sysPassword
+      se.initializePartition(username, password, getStandardCallback(req, res, next))
     else
-      res.send(400, "Must provide a sprocName field in the body")
+      res.send(401, "Must provide super-user credentials for this operation")
   )
 
-  server.post('/load-sprocs', (req, res, next) ->  # TODO: Only allow for super user
-    sprocsDirectory = path.join(__dirname, '..', 'sprocs')
-    se.loadSprocs(sprocsDirectory, getStandardCallback(req, res, next))
+  server.post('/execute-sproc', (req, res, next) ->
+    username = req.authorization.basic.username or req.body.username
+    password = req.authorization.basic.password or req.body.password
+    sysUsername = process.env.APPSETTING_TEMPORALIZE_USERNAME or process.env.TEMPORALIZE_USERNAME
+    sysPassword = process.env.APPSETTING_TEMPORALIZE_PASSWORD or process.env.TEMPORALIZE_PASSWORD
+    if username is sysUsername and password is sysPassword
+      memo = req.body.memo
+      if req.body.sprocName?
+        se.executeSproc(req.body.sprocName, memo, getStandardCallback(req, res, next))
+      else
+        res.send(400, "Must provide a sprocName field in the body")
+    else
+      res.send(401, "Must provide super-user credentials for this operation")
+  )
+
+  server.post('/load-sprocs', (req, res, next) ->
+    username = req.authorization.basic.username or req.body.username
+    password = req.authorization.basic.password or req.body.password
+    sysUsername = process.env.APPSETTING_TEMPORALIZE_USERNAME or process.env.TEMPORALIZE_USERNAME
+    sysPassword = process.env.APPSETTING_TEMPORALIZE_PASSWORD or process.env.TEMPORALIZE_PASSWORD
+    if username is sysUsername and password is sysPassword
+      sprocsDirectory = path.join(__dirname, '..', 'sprocs')
+      se.loadSprocs(sprocsDirectory, getStandardCallback(req, res, next))
+    else
+      res.send(401, "Must provide super-user credentials for this operation")
   )
 
   server.post('/time-in-state', (req, res, next) ->
