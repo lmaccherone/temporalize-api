@@ -20,13 +20,11 @@ module.exports = (server, se, callback) ->
     res.send(200, {hello: 'world'})
   )
 
-  server.get('/what', (req, res, next) ->
-    variables = ["TEMPORALIZE_USERNAME", "TEMPORALIZE_PASSWORD", "DOCUMENT_DB_URL", "DOCUMENT_DB_KEY"]
+  server.get('/env', (req, res, next) ->
     reply = {}
-    for v in variables
-      reply[v] = process.env[v]
+    for key, value of process.env
+      reply[key] = value
 
-    console.log(reply)
     res.send(200, reply)
     next()
   )
