@@ -1,6 +1,7 @@
 fs = require('fs')
 spawnSync = require('child_process').spawnSync
 path = require('path')
+{_} = require('documentdb-utils')
 
 endsWith = (s, suffix) ->
   s.indexOf(suffix, s.length - suffix.length) isnt -1
@@ -48,7 +49,7 @@ task('clean', 'Deletes .js and .map files', () ->
   for folder in folders
     pathToClean = path.join(__dirname, folder)
     contents = fs.readdirSync(pathToClean)
-    for file in contents when (_.endsWith(file, '.js') or _.endsWith(file, '.map'))
+    for file in contents when (_.endsWith(file, '.js') or _.endsWith(file, '.map')) and not _.endsWith(file, 'server.js')
       fs.unlinkSync(path.join(pathToClean, file))
 )
 
@@ -87,12 +88,4 @@ task('publish', 'Publish to npm and add git tags', () ->
       console.error('`git status --porcelain` was not clean. Not publishing.')
   )
   runSync('cake', ['clean'])
-)
-
-task('clean', 'Deletes .js and .map files', () ->
-  process.chdir(__dirname)
-  fs.readdir('./', (err, contents) ->
-    for file in contents when (endsWith(file, '.js') or endsWith(file, '.map'))
-      fs.unlink(file)
-  )
 )

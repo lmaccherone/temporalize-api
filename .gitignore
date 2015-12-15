@@ -4,4 +4,4 @@
 node_modules/
 *.js
 *.map
-!coffeestart.js
+!server.js

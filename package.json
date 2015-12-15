@@ -2,10 +2,9 @@
   "name": "temporalize-api",
   "version": "0.1.0",
   "description": "Ready-made web/mobile multi-tenant backend with easy time-series analytics",
-  "main": "server.coffee",
+  "main": "temporalize-api.coffee",
   "scripts": {
-    "test": "nodeunit",
-    "start": "node coffeestart server.coffee"
+    "test": "nodeunit"
   },
   "keywords": [
     "time-series",
