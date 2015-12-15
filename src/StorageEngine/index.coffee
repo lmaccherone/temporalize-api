@@ -1,3 +1,5 @@
+# TODO: Make all use of username lowercase
+
 HashRing = require('hashring')
 crypto = require('crypto')
 zxcvbn = require('zxcvbn')
