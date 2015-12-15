@@ -125,8 +125,8 @@ module.exports = class StorageEngine
             if response?
               @linkCache[collectionIDLink] = response._self
             @_readOrCreateInitialConfig((err, response, headers) =>
-              username = process.env.TEMPORALIZE_USERNAME
-              password = process.env.TEMPORALIZE_PASSWORD
+              username = process.env.APPSETTING_TEMPORALIZE_USERNAME or process.env.TEMPORALIZE_USERNAME
+              password = process.env.APPSETTING_TEMPORALIZE_PASSWORD or process.env.TEMPORALIZE_PASSWORD
               if username? and password?
                 query = {username}
                 @_query({query, asOf: 'LATEST'}, (err, users, userHeaders) =>
@@ -824,7 +824,9 @@ module.exports = class StorageEngine
   initializePartition: (username, password, callback) =>
     if process.env.NODE_ENV is 'production'
       return callback("initializePartition is not supported in production")
-    if username is process.env.TEMPORALIZE_USERNAME and password is process.env.TEMPORALIZE_PASSWORD
+    sysUsername = process.env.APPSETTING_TEMPORALIZE_USERNAME or process.env.TEMPORALIZE_USERNAME
+    sysPassword = process.env.APPSETTING_TEMPORALIZE_PASSWORD or process.env.TEMPORALIZE_PASSWORD
+    if username is sysUsername and password is sysPassword
       @terminate = false  # TODO: This is a potential race condition. It could attempt an operation before the database is ready. Consider moving @terminate=false into _initialize, but make sure that we fix the tests that set @terminate=true at the beginngin of execution, if there are any.
       @_initialize((err, result) =>
         if err?
@@ -839,7 +841,9 @@ module.exports = class StorageEngine
     if process.env.NODE_ENV is 'production'
       return callback("deletePartition is not supported in production")
     @terminate = true
-    if username is process.env.TEMPORALIZE_USERNAME and password is process.env.TEMPORALIZE_PASSWORD
+    sysUsername = process.env.APPSETTING_TEMPORALIZE_USERNAME or process.env.TEMPORALIZE_USERNAME
+    sysPassword = process.env.APPSETTING_TEMPORALIZE_PASSWORD or process.env.TEMPORALIZE_PASSWORD
+    if username is sysUsername and password is sysPassword
       @client.deleteDatabase(getLink(@firstTopLevelID), (err, result) =>
         if err? and err.code isnt 404
           callback(err)
