@@ -1,8 +1,5 @@
 module.exports = (memo) ->
 
-  randomPickerPackage = require('/Users/Larry/Dropbox/Projects/Lumenize/src/RandomPicker')  # TODO: Make this work with relative path or support path.join()
-  RandomPicker = randomPickerPackage.RandomPicker
-
   unless memo?
     memo = {}
   unless memo.startDate?

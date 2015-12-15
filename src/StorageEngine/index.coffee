@@ -82,6 +82,8 @@ module.exports = class StorageEngine
     else
       callback(null, this)
 
+    return this
+
   _initialize: (config, callback) ->
     unless callback?
       callback = config
