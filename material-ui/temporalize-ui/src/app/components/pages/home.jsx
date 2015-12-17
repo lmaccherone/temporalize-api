@@ -156,9 +156,9 @@ const HomePage = React.createClass({
     return (
       <FullWidthSection useContent={true} contentStyle={styles}>
         <HomeFeature
-          heading="Get Started"
-          route="/get-started"
-          img="images/get-started.svg"
+          heading="Analyze"
+          route="/analyze"
+          //img="images/get-started.svg"  // TODO: Need to replace this with an image for analyze
           firstChild={true}/>
         <HomeFeature
           heading="Customization"

@@ -54,7 +54,8 @@ let PageWithNav = React.createClass({
       content: {
         boxSizing: 'border-box',
         padding: Spacing.desktopGutter + 'px',
-        maxWidth: (Spacing.desktopKeylineIncrement * 14) + 'px',
+        //maxWidth: (Spacing.desktopKeylineIncrement * 14) + 'px',
+        maxWidth: '100%',
       },
       secondaryNavWhenMedium: {
         borderTop: 'none',

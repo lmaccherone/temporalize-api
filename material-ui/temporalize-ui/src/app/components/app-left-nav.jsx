@@ -66,8 +66,8 @@ const AppLeftNav = React.createClass({
           }}
         >
           <ListItem
-            value="get-started"
-            primaryText="Get Started"
+            value="analyze"
+            primaryText="Analyze"
           />
           <ListItem
             value="customization"

@@ -1,14 +1,11 @@
 import React from 'react';
 import PageWithNav from './page-with-nav';
 
-
-export default class GetStarted extends React.Component {
+export default class Analyze extends React.Component {
 
   render() {
     let menuItems = [
-      {route: '/get-started/prerequisites', text: 'Prerequisites'},
-      {route: '/get-started/installation', text: 'Installation & Usage'},
-      {route: '/get-started/examples', text: 'Examples'},
+      {route: '/analyze/tip', text: 'TiP'}
     ];
 
     return (
@@ -18,7 +15,7 @@ export default class GetStarted extends React.Component {
 
 }
 
-GetStarted.propTypes = {
+Analyze.propTypes = {
   children: React.PropTypes.node,
   location: React.PropTypes.object,
 };

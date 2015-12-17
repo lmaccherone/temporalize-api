@@ -9,10 +9,8 @@ import {
 import Master from './components/master';
 import Home from './components/pages/home';
 
-import GetStarted from './components/pages/get-started';
-import Prerequisites from './components/pages/get-started/prerequisites';
-import Installation from './components/pages/get-started/installation';
-import Examples from './components/pages/get-started/examples';
+import Analyze from './components/pages/analyze';
+import TiP from './components/pages/analyze/tip';
 
 import Customization from './components/pages/customization';
 import Colors from './components/pages/customization/colors';
@@ -51,7 +49,6 @@ import TextFields from './components/pages/components/text-fields';
 import TimePicker from './components/pages/components/time-picker';
 import Toolbars from './components/pages/components/toolbars';
 
-
 /**
  * Routes: https://github.com/rackt/react-router/blob/master/docs/api/components/Route.md
  *
@@ -64,11 +61,10 @@ import Toolbars from './components/pages/components/toolbars';
 const AppRoutes = (
   <Route path="/" component={Master}>
     <Route path="home" component={Home} />
-    <Redirect from="get-started" to="/get-started/prerequisites" />
-    <Route path="get-started" component={GetStarted}>
-      <Route path="prerequisites" component={Prerequisites} />
-      <Route path="installation" component={Installation} />
-      <Route path="examples" component={Examples} />
+
+    <Redirect from="analyze" to="/analyze/tip" />
+    <Route path="analyze" component={Analyze}>
+      <Route path="tip" component={TiP} />
     </Route>
 
     <Redirect from="customization" to="/customization/themes" />
