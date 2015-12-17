@@ -2,7 +2,8 @@ import React from 'react';
 import Highcharts from 'highcharts-release/highcharts.src.js';
 import ReactHighcharts from 'react-highcharts/bundle/highcharts';
 import 'highcharts-exporting';
-import $ from 'jquery';
+import _ from 'lodash';
+import superagent from 'superagent/lib/client'
 
 import {ClearFix, Mixins, Paper} from 'material-ui';
 import ComponentDoc from '../../component-doc';
@@ -21,7 +22,7 @@ const TiPChart = React.createClass({
           categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
         },
         series: [{
-          data: [29.9, 71.5, 106.4, 129.2, 144.0, 176.0, 135.6, 148.5, 216.4, 194.1, 95.6, 54.4]
+          data: []
         }],
         credits: {
           enabled: false
@@ -32,19 +33,24 @@ const TiPChart = React.createClass({
   },
 
   componentDidMount: function() {
-    console.log('got here');
     let chart = this.refs.chart.getChart();
-    console.log(chart);
-    chart.setTitle({ text: 'Something has changed' }, null, true);
-    var svg = chart.getSVG();
-    console.log(svg);
-    chart.visible = false;
-    chart.redraw();
-    $.get("https://api.github.com/users/octocat/gists", function(result) {
+    let timeSeriesConfig = {
+      "query": {"Priority": 1},
+      "stateFilter": {"State": {"$in": ["In Progress", "Accepted"]}},
+      "granularity": "hour",
+        "tz": "America/Chicago",
+        "endBefore": "2015-12-14T03:36:12.662Z",
+        "uniqueIDField": "_EntityID",
+        "trackLastValueForTheseFields": ["_ValidTo", "Points"]
+    };
+    superagent.post("http://temporalize.azurewebsites.net/time-in-state")
+      .auth('larry@maccherone.com', "BCltsn3^LlMF")
+      .end(function(err, response) {
       if (this.isMounted()) {
-        console.log(result);
-        var newConfig = JSON.parse(JSON.stringify(this.state.config))
-        newConfig.xAxis.categories[3] = "Mystery Month"
+        console.log(response.body);
+        var newConfig = _.cloneDeep(this.state.config);
+        newConfig.xAxis.categories[3] = "Mystery Month";
+        newConfig.series[0].data = [29.9, 71.5, 106.4, 129.2, 144.0, 176.0, 135.6, 148.5, 216.4, 194.1, 95.6, 54.4];
         this.setState({
           config: newConfig
         });
@@ -96,19 +102,6 @@ const TiPPage = React.createClass({
   render() {
 
     let groupStyle = this.getStyles().group;
-
-    var config = {
-      xAxis: {
-        categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-      },
-      series: [{
-        data: [29.9, 71.5, 106.4, 129.2, 144.0, 176.0, 135.6, 148.5, 216.4, 194.1, 95.6, 54.4]
-      }],
-      credits: {
-        enabled: false
-      },
-      title: {text: "Junk"}
-    };
 
     return (
       <Paper style = {{marginBottom: '22px'}}>

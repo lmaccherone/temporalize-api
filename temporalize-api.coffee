@@ -71,7 +71,7 @@ server.use(restify.acceptParser(server.acceptable))
 server.use(restify.authorizationParser())
 server.use(restify.bodyParser({mapParams: false}))
 server.use(restify.queryParser({mapParams: false}))
-server.use(restify.CORS({credentials: true}))
+server.use(restify.CORS())
 server.locals = {}
 
 se = new StorageEngine(seConfig, (err, result) ->
