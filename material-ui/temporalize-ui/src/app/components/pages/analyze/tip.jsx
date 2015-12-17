@@ -35,6 +35,8 @@ const TiPChart = React.createClass({
   componentDidMount: function() {
     let chart = this.refs.chart.getChart();
     let timeSeriesConfig = {
+      "username": "larry@maccherone.com",
+      "password": "BCltsn3^LlMF",
       "query": {"Priority": 1},
       "stateFilter": {"State": {"$in": ["In Progress", "Accepted"]}},
       "granularity": "hour",
@@ -44,8 +46,7 @@ const TiPChart = React.createClass({
         "trackLastValueForTheseFields": ["_ValidTo", "Points"]
     };
     superagent.post("http://temporalize.azurewebsites.net/time-in-state")
-      .auth('larry@maccherone.com', "BCltsn3^LlMF")
-      .withCredentials()
+      //.auth('larry@maccherone.com', "BCltsn3^LlMF")
       .end(function(err, response) {
       if (this.isMounted()) {
         console.log(response.body);

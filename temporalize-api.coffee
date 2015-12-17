@@ -3,6 +3,7 @@ fs = require('fs')
 path = require('path')
 lumenize = require('lumenize')
 marked = require('marked')
+cors = require('cors')
 
 {_} = require('documentdb-utils')
 
@@ -71,7 +72,7 @@ server.use(restify.acceptParser(server.acceptable))
 server.use(restify.authorizationParser())
 server.use(restify.bodyParser({mapParams: false}))
 server.use(restify.queryParser({mapParams: false}))
-server.pre(restify.CORS())
+server.use(cors())
 server.locals = {}
 
 se = new StorageEngine(seConfig, (err, result) ->
