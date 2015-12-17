@@ -20,6 +20,7 @@
     "highlight.js": "^9.0.0",
     "history": "1.13.x",
     "intl": "^1.0.1",
+    "jquery": "^2.1.4",
     "marked": "^0.3.5",
     "react-addons-perf": "^0.14.0",
     "react-dom": "^0.14.0",

@@ -2,6 +2,7 @@ import React from 'react';
 import Highcharts from 'highcharts-release/highcharts.src.js';
 import ReactHighcharts from 'react-highcharts/bundle/highcharts';
 import 'highcharts-exporting';
+import $ from 'jquery';
 
 import {ClearFix, Mixins, Paper} from 'material-ui';
 import ComponentDoc from '../../component-doc';
@@ -10,6 +11,55 @@ const {StyleResizable} = Mixins;
 import Code from 'paper-code';
 import CodeExample from '../../code-example/code-example';
 import CodeBlock from '../../code-example/code-block';
+
+const TiPChart = React.createClass({
+
+  getInitialState: function() {
+    return {
+      config: {
+        xAxis: {
+          categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+        },
+        series: [{
+          data: [29.9, 71.5, 106.4, 129.2, 144.0, 176.0, 135.6, 148.5, 216.4, 194.1, 95.6, 54.4]
+        }],
+        credits: {
+          enabled: false
+        },
+        title: {text: "Junk"}
+      }
+    };
+  },
+
+  componentDidMount: function() {
+    console.log('got here');
+    let chart = this.refs.chart.getChart();
+    console.log(chart);
+    chart.setTitle({ text: 'Something has changed' }, null, true);
+    var svg = chart.getSVG();
+    console.log(svg);
+    chart.visible = false;
+    chart.redraw();
+    $.get("https://api.github.com/users/octocat/gists", function(result) {
+      if (this.isMounted()) {
+        console.log(result);
+        var newConfig = JSON.parse(JSON.stringify(this.state.config))
+        newConfig.xAxis.categories[3] = "Mystery Month"
+        this.setState({
+          config: newConfig
+        });
+      }
+    }.bind(this));
+  },
+
+  render() {
+    return (
+      <div>
+        <ReactHighcharts width="66%" config={this.state.config} ref="chart"></ReactHighcharts>
+      </div>
+    );
+  }
+})
 
 const TiPPage = React.createClass({
 
@@ -41,46 +91,9 @@ const TiPPage = React.createClass({
     return styles;
   },
 
-  render() {
 
-    let componentInfo = [
-      {
-        name: 'Props',
-        infoArray: [
-          {
-            name: 'circle',
-            type: 'bool',
-            header: 'default: false',
-            desc: 'Set to true to generate a circlular paper container.',
-          },
-          {
-            name: 'rounded',
-            type: 'bool',
-            header: 'default: true',
-            desc: 'By default, the paper container will have a border radius. ' +
-              'Set this to false to generate a container with sharp corners.',
-          },
-          {
-            name: 'style',
-            type: 'object',
-            header: 'optional',
-            desc: 'Override the inline-styles of Paper\'s root element.',
-          },
-          {
-            name: 'zDepth',
-            type: 'oneOf [0,1,2,3,4,5]',
-            header: 'default: 1',
-            desc: 'This number represents the zDepth of the paper shadow.',
-          },
-          {
-            name: 'transitionEnabled',
-            type: 'bool',
-            header: 'default: true',
-            desc: 'Set to false to disable CSS transitions for the paper element.',
-          },
-        ],
-      },
-    ];
+
+  render() {
 
     let groupStyle = this.getStyles().group;
 
@@ -93,12 +106,13 @@ const TiPPage = React.createClass({
       }],
       credits: {
         enabled: false
-      }
+      },
+      title: {text: "Junk"}
     };
 
     return (
       <Paper style = {{marginBottom: '22px'}}>
-        <ReactHighcharts config = {config} ref="chart"></ReactHighcharts>
+        <TiPChart />
       </Paper>
     );
   },
