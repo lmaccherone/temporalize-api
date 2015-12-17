@@ -2,9 +2,3 @@
 .play/
 .idea/
 node_modules/
-
-!server.js
-!static/*.js
-!static/*.map
-!material-ui/temporalize-ui/build/*.js
-!material-ui/temporalize-ui/build/*.map
