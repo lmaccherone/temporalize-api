@@ -37,7 +37,7 @@ module.exports = (server, se, callback) ->
   )
 
   server.get(/\/?.*/, restify.serveStatic({
-    directory: path.join('.', 'static'),
+    directory: path.join('.', 'material-ui', 'temporalize-ui', 'build'),
     default: 'index.html'
   }))
 
