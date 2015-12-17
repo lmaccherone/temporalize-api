@@ -45,6 +45,7 @@ const TiPChart = React.createClass({
     };
     superagent.post("http://temporalize.azurewebsites.net/time-in-state")
       .auth('larry@maccherone.com', "BCltsn3^LlMF")
+      .withCredentials()
       .end(function(err, response) {
       if (this.isMounted()) {
         console.log(response.body);
