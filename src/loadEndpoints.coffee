@@ -148,7 +148,7 @@ module.exports = (server, se, callback) ->
         password = req.authorization.basic.password or req.body.password
         se.login(username, password, (err, result) ->
           if err?
-            res.send(err.code, err.body)
+            res.send(err.code, err.body + username + password)
           else
             se.timeSeries(result.id, config, getStandardCallback(req, res, next))
         )
