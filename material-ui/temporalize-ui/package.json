@@ -1,10 +1,10 @@
 {
-  "name": "material-ui-docs",
-  "version": "0.14.0-rc2",
-  "description": "Documentation site for material-ui",
+  "name": "temporalize-ui",
+  "version": "0.1.0",
+  "description": "UI for Temporalize",
   "repository": {
     "type": "git",
-    "url": "https://github.com/callemall/material-ui.git"
+    "url": "https://github.com/lmaccherone/temporalize-api.git"
   },
   "private": true,
   "scripts": {
