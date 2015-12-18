@@ -21,8 +21,8 @@ module.exports = (server, se, callback) ->
   )
 
   server.get('/env', (req, res, next) ->
-    username = req.authorization.basic.username or req.body.username
-    password = req.authorization.basic.password or req.body.password
+    username = req.authorization?.basic?.username or req.body.username
+    password = req.authorization?.basic?.password or req.body.password
     sysUsername = process.env.APPSETTING_TEMPORALIZE_USERNAME or process.env.TEMPORALIZE_USERNAME
     sysPassword = process.env.APPSETTING_TEMPORALIZE_PASSWORD or process.env.TEMPORALIZE_PASSWORD
     if username is sysUsername and password is sysPassword
@@ -42,8 +42,8 @@ module.exports = (server, se, callback) ->
   }))
 
   server.post('/login', (req, res, next) ->
-    username = req.authorization.basic.username or req.body.username
-    password = req.authorization.basic.password or req.body.password
+    username = req.authorization?.basic?.username or req.body.username
+    password = req.authorization?.basic?.password or req.body.password
 #    se.login(username, password, getStandardCallback(req, res, next))
     se.login(username, password, getStandardCallback(req, res, next))
   )
@@ -70,8 +70,8 @@ module.exports = (server, se, callback) ->
   )
 
   server.post('/delete-partition', (req, res, next) ->
-    username = req.authorization.basic.username or req.body.username
-    password = req.authorization.basic.password or req.body.password
+    username = req.authorization?.basic?.username or req.body.username   # TODO: Move this logic to the storage engine
+    password = req.authorization?.basic?.password or req.body.password
     sysUsername = process.env.APPSETTING_TEMPORALIZE_USERNAME or process.env.TEMPORALIZE_USERNAME
     sysPassword = process.env.APPSETTING_TEMPORALIZE_PASSWORD or process.env.TEMPORALIZE_PASSWORD
     if username is sysUsername and password is sysPassword
@@ -81,8 +81,8 @@ module.exports = (server, se, callback) ->
   )
 
   server.post('/initialize-partition', (req, res, next) ->
-    username = req.authorization.basic.username or req.body.username
-    password = req.authorization.basic.password or req.body.password
+    username = req.authorization?.basic?.username or req.body.username
+    password = req.authorization?.basic?.password or req.body.password
     sysUsername = process.env.APPSETTING_TEMPORALIZE_USERNAME or process.env.TEMPORALIZE_USERNAME
     sysPassword = process.env.APPSETTING_TEMPORALIZE_PASSWORD or process.env.TEMPORALIZE_PASSWORD
     if username is sysUsername and password is sysPassword
@@ -92,8 +92,8 @@ module.exports = (server, se, callback) ->
   )
 
   server.post('/execute-sproc', (req, res, next) ->
-    username = req.authorization.basic.username or req.body.username
-    password = req.authorization.basic.password or req.body.password
+    username = req.authorization?.basic?.username or req.body.username
+    password = req.authorization?.basic?.password or req.body.password
     sysUsername = process.env.APPSETTING_TEMPORALIZE_USERNAME or process.env.TEMPORALIZE_USERNAME
     sysPassword = process.env.APPSETTING_TEMPORALIZE_PASSWORD or process.env.TEMPORALIZE_PASSWORD
     if username is sysUsername and password is sysPassword
@@ -107,8 +107,8 @@ module.exports = (server, se, callback) ->
   )
 
   server.post('/load-sprocs', (req, res, next) ->
-    username = req.authorization.basic.username or req.body.username
-    password = req.authorization.basic.password or req.body.password
+    username = req.authorization?.basic?.username or req.body.username
+    password = req.authorization?.basic?.password or req.body.password
     sysUsername = process.env.APPSETTING_TEMPORALIZE_USERNAME or process.env.TEMPORALIZE_USERNAME
     sysPassword = process.env.APPSETTING_TEMPORALIZE_PASSWORD or process.env.TEMPORALIZE_PASSWORD
     if username is sysUsername and password is sysPassword
@@ -125,8 +125,8 @@ module.exports = (server, se, callback) ->
       if sessionID?
         se.timeInState(sessionID, config, getStandardCallback(req, res, next))
       else
-        username = req.authorization.basic.username or req.body.username  # TODO: Upgrade other endpoints to do this auto login
-        password = req.authorization.basic.password or req.body.password
+        username = req.authorization?.basic?.username or req.body.username  # TODO: Move this logic to the StorageEngine
+        password = req.authorization?.basic?.password or req.body.password
         se.login(username, password, (err, result) ->
           if err?
             res.send(err.code, err.body)
@@ -144,8 +144,8 @@ module.exports = (server, se, callback) ->
       if sessionID?
         se.timeSeries(sessionID, config, getStandardCallback(req, res, next))
       else
-        username = req.authorization.basic.username or req.body.username  # TODO: Upgrade other endpoints to do this auto login
-        password = req.authorization.basic.password or req.body.password
+        username = req.authorization?.basic?.username or req.body.username  # TODO: Move this logic to the StorageEngine
+        password = req.authorization?.basic?.password or req.body.password
         se.login(username, password, (err, result) ->
           if err?
             res.send(err.code, err.body + username + password)
