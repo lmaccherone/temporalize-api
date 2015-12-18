@@ -5,6 +5,8 @@ var nodeModulesPath = path.resolve(__dirname, 'node_modules');
 var HtmlWebpackPlugin = require('html-webpack-plugin');
 var TransferWebpackPlugin = require('transfer-webpack-plugin');
 
+var authString = process.env.TEMPORALIZE_USERNAME + ':' + process.env.TEMPORALIZE_PASSWORD;
+
 var config = {
   //Entry point to the project
   entry: [
@@ -20,6 +22,8 @@ var config = {
       //material-ui requires will be searched in src folder, not in node_modules
       'material-ui/lib': path.resolve(__dirname, '../src'),
       'material-ui': path.resolve(__dirname, '../src'),
+      //'files': "tzTime/files/index.js",
+      //'tz': "raw!tzTime/files/tz"
     },
     //Modules will be searched for in these directories
     modulesDirectories: [
@@ -37,7 +41,11 @@ var config = {
     devtool: 'eval',
     hot: true,
     inline: true,
-    port: 3000
+    port: 3000,
+    proxy: {
+      '/time-in-state*': {target: 'http://localhost:1338', secure: false, auth: authString},
+      '/hello*': {target: 'http://localhost:1338', secure: false}
+    }
   },
   devtool: 'eval',
   //Output file config
@@ -97,6 +105,13 @@ var config = {
             test: /\.css$/,
             loader: "style-loader!css-loader"
           },
+          { test: /\.cjsx$/, loaders: ['coffee', 'cjsx']},
+          { test: /\.coffee$/, loader: 'coffee' },
+          //{
+          //  test: /\.lzw$/,
+          //  loader: "raw-loader",
+          //  include: path.join(__dirname, 'node_modules', 'tzTime', 'files')
+          //},
         ]
   },
   eslint: {

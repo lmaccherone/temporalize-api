@@ -99,6 +99,8 @@ var config = {
             test: /\.css$/,
             loader: "style-loader!css-loader"
           },
+          { test: /\.cjsx$/, loaders: ['coffee', 'cjsx']},
+          { test: /\.coffee$/, loader: 'coffee' }
         ]
   },
   eslint: {
