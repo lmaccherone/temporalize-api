@@ -61,7 +61,9 @@ const TiPChart = React.createClass({
         "endBefore": "2015-12-18T03:36:12.662Z",
         "uniqueIDField": "_EntityID",
         "trackLastValueForTheseFields": ["_ValidTo", "Points"]
-      }
+      },
+      username: 'larry@maccherone.com',
+      password: 'BCltsn3^LlMF'
     };
 
     superagent.post("/time-in-state")
