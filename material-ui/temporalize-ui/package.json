@@ -28,6 +28,7 @@
     "react-motion": "^0.3.1",
     "react-router": "1.0.2",
     "react-swipeable-views": "^0.3.0",
+    "rfc6902-json-diff": "^0.1.2",
     "style-loader": "0.13.0",
     "superagent": "^1.6.1"
   },
