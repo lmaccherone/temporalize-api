@@ -2,6 +2,8 @@ fs = require('fs')
 spawnSync = require('child_process').spawnSync
 path = require('path')
 {_} = require('documentdb-utils')
+wrench = require('wrench')
+# cjsx = require('coffee-react')
 
 endsWith = (s, suffix) ->
   s.indexOf(suffix, s.length - suffix.length) isnt -1
@@ -23,6 +25,7 @@ runSyncNoExit = (command, options = []) ->
   return {stderr, stdout}
 
 runSyncRaw = (command, options) ->
+  console.log(command, options)
   output = spawnSync(command, options)
   stdout = output.stdout?.toString()
   stderr = output.stderr?.toString()
@@ -88,4 +91,17 @@ task('publish', 'Publish to npm and add git tags', () ->
       console.error('`git status --porcelain` was not clean. Not publishing.')
   )
   runSync('cake', ['clean'])
+)
+
+option('-f', '--file [FILE]', 'File for cjsx and test (when implemented) tasks to operate on')
+
+task('cjsx', 'Recursively searches for cjsx file and compile it to the console. `cake -f <myCJSX> cjsx`', (options) ->
+  fileToCompile = path.basename(options.file, '.cjsx')
+  prefix = path.join(__dirname, '/material-ui/temporalize-ui/src')
+  files = wrench.readdirSyncRecursive(prefix)
+  for file in files
+    if _.endsWith(file, '.cjsx')
+      basename = path.basename(file, '.cjsx')
+      if basename is fileToCompile
+        runSync(path.join(__dirname, '/material-ui/temporalize-ui', 'node_modules', '.bin', 'cjsx'), ['-cbp', path.join(prefix, file)])
 )

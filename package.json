@@ -22,7 +22,8 @@
   "devDependencies": {
     "documentdb-mock": "^0.3.0",
     "nodemon": "^1.8.1",
-    "nodeunit": "^0.9.1"
+    "nodeunit": "^0.9.1",
+    "wrench": "^1.5.8"
   },
   "dependencies": {
     "coffee-script": "^1.9.3",
