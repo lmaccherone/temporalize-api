@@ -16,7 +16,7 @@ module.exports = (config, calculatorResults) ->
       row.x = new Date(row._ValidTo_lastValue)
       noLongerInProcess.push(row)
       row.dateLabel = row._ValidTo_lastValue
-    row.y = row.ticks / 8 / 5  # Assumes 5 work-day week and 8 hours per day
+    row.y = row.ticks / 8 / 5  # Assumes 5 work-day week and 8 hours per day  TODO: Upgrade to use config info
     row.z = row.Points_lastValue  # Assumes 5 work-day week and 8 hours per day
 
   series = [
