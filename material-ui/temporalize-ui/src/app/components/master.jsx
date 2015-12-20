@@ -9,7 +9,8 @@ import {AppBar,
       Styles,
       Tab,
       Tabs,
-      Paper} from 'material-ui';
+      Paper,
+      FontIcon} from 'material-ui';
 
 const {StylePropable} = Mixins;
 const {Colors, Spacing, Typography} = Styles;
@@ -102,7 +103,7 @@ const Master = React.createClass({
       <IconButton
         iconStyle={styles.iconButton}
         iconClassName="muidocs-icon-custom-github"
-        href="https://github.com/callemall/material-ui"
+        href="https://github.com/lmaccherone/temporalize-api"
         linkButton={true}
         style={styles.github} />
     );
@@ -111,7 +112,7 @@ const Master = React.createClass({
       <IconButton
         iconStyle={styles.iconButton}
         iconClassName="muidocs-icon-custom-github"
-        href="https://github.com/callemall/material-ui"
+        href="https://github.com/lmaccherone/temporalize-api"
         linkButton={true}/>
     );
     return (
@@ -123,10 +124,13 @@ const Master = React.createClass({
         <AppLeftNav ref="leftNav" history={this.props.history} location={this.props.location} />
         <FullWidthSection style={styles.footer}>
           <p style={this.prepareStyles(styles.p)}>
-            Hand crafted with love by the engineers at
-            <a style={styles.a} href="http://call-em-all.com">Call-Em-All</a> and our
-            awesome <a style={this.prepareStyles(styles.a)}
-              href="https://github.com/callemall/material-ui/graphs/contributors">contributors</a>.
+            Analysis and visualization to help you extract insights from your data with a particular
+            strength in temporal data (Temporalize)
+          </p>
+          <p style={this.prepareStyles(styles.p)}>
+            <a style={styles.a} href="http://blog.lumenize.com">Blog</a> -
+            <a style={this.prepareStyles(styles.a)}
+              href="https://github.com/lmaccherone/Lumenize/graphs/contributors"> Contributors</a>
           </p>
           {githubButton2}
         </FullWidthSection>
@@ -167,7 +171,7 @@ const Master = React.createClass({
         width: 65,
         backgroundColor: Colors.cyan500,
         position: 'absolute',
-        top: 20,
+        top: 22,
       },
       tabs: {
         width: 425,
@@ -184,7 +188,7 @@ const Master = React.createClass({
     // show it on the login and sign-up pages without showing it on the home page)
     // by the section below which always shows the logo even on the home page
 
-    // let materialIcon = this.state.tabIndex !== '0' ? (
+    // let lumenizeIcon = this.state.tabIndex !== '0' ? (
     //   <EnhancedButton
     //     style={styles.svgLogoContainer}
     //     linkButton={true}
@@ -193,13 +197,18 @@ const Master = React.createClass({
     //     <span style={this.prepareStyles(styles.span)}>Temporalize</span>
     //   </EnhancedButton>) : null;
 
-    let materialIcon =
+    // <img style={this.prepareStyles(styles.svgLogo)} src="images/material-ui-logo.svg"/>
+    let lumenizeIcon =
       <EnhancedButton
         style={styles.svgLogoContainer}
         linkButton={true}
         href="/#/home">
-        <img style={this.prepareStyles(styles.svgLogo)} src="images/material-ui-logo.svg"/>
-        <span style={this.prepareStyles(styles.span)}>Temporalize</span>
+        <FontIcon
+          className="muidocs-icon-action-home"
+          color={Colors.grey300}
+          hoverColor={Colors.yellow100}
+          style={this.prepareStyles(styles.svgLogo)} />
+        <span style={this.prepareStyles(styles.span)}>Lumenize</span>
       </EnhancedButton>
 
     return (
@@ -208,7 +217,7 @@ const Master = React.createClass({
           zDepth={0}
           rounded={false}
           style={styles.root}>
-          {materialIcon}
+          {lumenizeIcon}
           <div style={this.prepareStyles(styles.container)}>
             <Tabs
               style={styles.tabs}
@@ -256,7 +265,7 @@ const Master = React.createClass({
     let githubButton = (
       <IconButton
         iconClassName="muidocs-icon-custom-github"
-        href="https://github.com/callemall/material-ui"
+        href="https://github.com/lmaccherone/temporalize-api"
         linkButton={true}/>
     );
 
