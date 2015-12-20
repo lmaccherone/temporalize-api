@@ -179,14 +179,28 @@ const Master = React.createClass({
 
     };
 
-    let materialIcon = this.state.tabIndex !== '0' ? (
+    // The below is commented out because it hides the logo in the upper left on
+    // the login page. It's substituted (at least until I can figure out how to
+    // show it on the login and sign-up pages without showing it on the home page)
+    // by the section below which always shows the logo even on the home page
+
+    // let materialIcon = this.state.tabIndex !== '0' ? (
+    //   <EnhancedButton
+    //     style={styles.svgLogoContainer}
+    //     linkButton={true}
+    //     href="/#/home">
+    //     <img style={this.prepareStyles(styles.svgLogo)} src="images/material-ui-logo.svg"/>
+    //     <span style={this.prepareStyles(styles.span)}>Temporalize</span>
+    //   </EnhancedButton>) : null;
+
+    let materialIcon =
       <EnhancedButton
         style={styles.svgLogoContainer}
         linkButton={true}
         href="/#/home">
         <img style={this.prepareStyles(styles.svgLogo)} src="images/material-ui-logo.svg"/>
         <span style={this.prepareStyles(styles.span)}>Temporalize</span>
-      </EnhancedButton>) : null;
+      </EnhancedButton>
 
     return (
       <div>

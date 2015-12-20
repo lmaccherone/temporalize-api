@@ -8,13 +8,8 @@ _ = require('lodash')
 diff = require("rfc6902-json-diff")
 superagent = require('superagent/lib/client')
 
-{ClearFix, Mixins, Paper} = require('material-ui')
+{Mixins, Paper} = require('material-ui')
 {StyleResizable} = Mixins
-ComponentDoc = require('../../component-doc')
-
-Code = require('paper-code')
-CodeExample = require('../../code-example/code-example')
-CodeBlock = require('../../code-example/code-block')
 
 tipCalculator = require('./tipCalculator')
 
@@ -27,6 +22,7 @@ TiPChart = React.createClass(
     cachedConfig = JSON.parse(localStorage.getItem('tip'))  # TODO: Update this to be a hash of 'tip' + @state.userConfig
     unless cachedConfig?
       cachedConfig = {}
+      console.log('no config in localStorage')
     return {config: cachedConfig}
 
   componentDidMount: () ->
@@ -124,18 +120,18 @@ module.exports = React.createClass(
 
   getStyles: () ->
     styles =
-      root:
-        height: '100px'
-        width: '100px'
-        margin: '0 auto'
-        marginBottom: '64px'
-        textAlign: 'center'
+      # root:
+      #   height: '100px'
+      #   width: '100px'
+      #   margin: '0 auto'
+      #   marginBottom: '64px'
+      #   textAlign: 'center'
       group:
         float: 'left'
         width: '100%'
-      p:
-        lineHeight: '80px'
-        height: '100%'
+      # p:
+      #   lineHeight: '80px'
+      #   height: '100%'
 
     if @isDeviceSize(StyleResizable.statics.Sizes.MEDIUM)
       styles.group.width = '33%'

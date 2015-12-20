@@ -8,6 +8,7 @@ import {
 // Here we define all our material-ui ReactComponents.
 import Master from './components/master';
 import Home from './components/pages/home';
+import Login from './components/pages/login';
 
 import Analyze from './components/pages/analyze';
 import TiP from './components/pages/analyze/tip';
@@ -49,6 +50,14 @@ import TextFields from './components/pages/components/text-fields';
 import TimePicker from './components/pages/components/time-picker';
 import Toolbars from './components/pages/components/toolbars';
 
+
+function requireAuth(nextState, replaceState) {
+  console.log('got here')
+  let session = localStorage.getItem('session');
+  if (! session)
+    replaceState({ nextPathname: nextState.location.pathname }, '/login')
+}
+
 /**
  * Routes: https://github.com/rackt/react-router/blob/master/docs/api/components/Route.md
  *
@@ -62,8 +71,10 @@ const AppRoutes = (
   <Route path="/" component={Master}>
     <Route path="home" component={Home} />
 
+    <Route path="login" component={Login} />
+
     <Redirect from="analyze" to="/analyze/tip" />
-    <Route path="analyze" component={Analyze}>
+    <Route path="analyze" component={Analyze} onEnter={requireAuth}>
       <Route path="tip" component={TiP} />
     </Route>
 
