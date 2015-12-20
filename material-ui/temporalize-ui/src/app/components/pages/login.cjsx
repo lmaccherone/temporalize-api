@@ -3,7 +3,7 @@ React = require('react')
 _ = require('lodash')
 superagent = require('superagent/lib/client')
 
-{Styles} = require('material-ui')
+{Styles, TextField, FlatButton} = require('material-ui')
 # {StyleResizable, StylePropable} = Mixins  # I think this is safe to remove
 {Spacing, Colors, Typography} = Styles
 
@@ -12,6 +12,10 @@ FullWidthSection = require('../full-width-section')
 module.exports = React.createClass(
 
   # mixins: [StyleResizable]  # I think it's safe to not have this here
+
+  handleLogin: (event) ->
+    username = @refs.username.getValue()
+    password = @refs.password.getValue()
 
   render: () ->
 
@@ -38,9 +42,23 @@ module.exports = React.createClass(
           style={styles.root}
           useContent={true}
           contentStyle={styles.content}
-          contentType="p"
           className="login">
-          Login
+          <div>
+            <TextField
+              ref='username'
+              hintText="someone@somewhere.com"
+              floatingLabelText="Email"
+            />
+          </div>
+          <div>
+            <TextField
+              ref='password'
+              hintText="Password"
+              floatingLabelText="Password"
+              type="password"
+            />
+            <FlatButton style={left:10} label="Login" primary={true} onTouchTap={@handleLogin} />
+          </div>
         </FullWidthSection>
       </div>
     )
