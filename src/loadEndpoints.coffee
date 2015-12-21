@@ -44,7 +44,6 @@ module.exports = (server, se, callback) ->
   server.post('/login', (req, res, next) ->
     username = req.authorization?.basic?.username or req.body.username
     password = req.authorization?.basic?.password or req.body.password
-#    se.login(username, password, getStandardCallback(req, res, next))
     se.login(username, password, getStandardCallback(req, res, next))
   )
 

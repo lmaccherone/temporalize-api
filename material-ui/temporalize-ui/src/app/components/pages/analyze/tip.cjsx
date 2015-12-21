@@ -6,7 +6,7 @@ require('highcharts-more')
 
 _ = require('lodash')
 diff = require("rfc6902-json-diff")
-superagent = require('superagent/lib/client')
+superagent = require('superagent/lib/client')  # TODO: Use my abstracted api-request
 
 {Mixins, Paper} = require('material-ui')
 {StyleResizable} = Mixins
@@ -22,7 +22,6 @@ TiPChart = React.createClass(
     cachedConfig = JSON.parse(localStorage.getItem('tip'))  # TODO: Update this to be a hash of 'tip' + @state.userConfig
     unless cachedConfig?
       cachedConfig = {}
-      console.log('no config in localStorage')
     return {config: cachedConfig}
 
   componentDidMount: () ->
@@ -43,15 +42,12 @@ TiPChart = React.createClass(
         "uniqueIDField": "_EntityID",
         "trackLastValueForTheseFields": ["_ValidTo", "Points"]
       }
-      "username": "larry@maccherone.com"
-      "password": "BCltsn3^LlMF"
     }
 
     superagent.post("/time-in-state").accept('json').send(lumenizeCalculatorConfig).end((err, response) =>
       if @isMounted()
         calculatorResults = tipCalculator({userConfig: @state.userConfig, lumenizeCalculatorConfig}, response.body)
         series = calculatorResults.series
-        console.log('series: ', series)
 
         scatterChartConfig = {
 

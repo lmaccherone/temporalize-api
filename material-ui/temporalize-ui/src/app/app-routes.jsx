@@ -50,12 +50,12 @@ import TextFields from './components/pages/components/text-fields';
 import TimePicker from './components/pages/components/time-picker';
 import Toolbars from './components/pages/components/toolbars';
 
-
 function requireAuth(nextState, replaceState) {
-  console.log('got here')
   let session = localStorage.getItem('session');
-  if (! session)
-    replaceState({ nextPathname: nextState.location.pathname }, '/login')
+  if (! session) {
+    localStorage.setItem('whereHeaded', nextState.location.pathname);
+    replaceState({ nextPathname: nextState.location.pathname }, '/login');
+  }
 }
 
 /**

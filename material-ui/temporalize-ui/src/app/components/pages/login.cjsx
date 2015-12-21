@@ -1,13 +1,14 @@
 React = require('react')
 
 _ = require('lodash')
-superagent = require('superagent/lib/client')
 
 {Styles, TextField, FlatButton} = require('material-ui')
 # {StyleResizable, StylePropable} = Mixins  # I think this is safe to remove
 {Spacing, Colors, Typography} = Styles
 
 FullWidthSection = require('../full-width-section')
+request = require('../../api-request')
+history = require('../../history')
 
 module.exports = React.createClass(
 
@@ -16,6 +17,19 @@ module.exports = React.createClass(
   handleLogin: (event) ->
     username = @refs.username.getValue()
     password = @refs.password.getValue()
+    request('/login', {username, password}, (err, response) ->
+      if err?
+        console.dir('error in handle login callback', err)
+      else
+        # Save the session
+        localStorage.setItem('session', JSON.stringify(response.body))
+        console.log('response.body should be session', response.body)
+        console.log('history from within handleLogin. Looking for nextPathname or nextState', history)
+        whereHeaded = localStorage.getItem('whereHeaded')
+        localStorage.removeItem('whereHeaded')
+        history.replace(whereHeaded)
+    )
+
 
   render: () ->
 

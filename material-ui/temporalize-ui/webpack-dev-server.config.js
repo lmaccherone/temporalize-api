@@ -43,7 +43,8 @@ var config = {
     inline: true,
     port: 3000,
     proxy: {
-      '/time-in-state*': {target: 'http://localhost:1338', secure: false, auth: authString},
+      '/time-in-state*': {target: 'http://localhost:1338', secure: false}, 
+      '/login*': {target: 'http://localhost:1338', secure: false},
       '/hello*': {target: 'http://localhost:1338', secure: false}
     }
   },
