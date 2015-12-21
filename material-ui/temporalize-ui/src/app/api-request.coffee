@@ -19,9 +19,8 @@ module.exports = (endpoint, body, callback) ->
         if err? and err.status in [401]
           JSONStorage.removeItem('session')
           history.replace('/login')
-        else
-          if callback?
-            callback(err, response)
+        if callback?  # Calling even if there is an error so login page knows why
+          callback(err, response)
       )
   else  # No session?.id
     JSONStorage.removeItem('session')

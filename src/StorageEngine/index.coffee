@@ -465,9 +465,11 @@ module.exports = class StorageEngine
           @_upsert(user, 'VALID_TIME', callback)
       )
     else
+      user.username = user.username.toLowerCase()
       @_upsert(user, 'VALID_TIME', callback)
 
   login: (username, password, callback) =>
+    username = username.toLowerCase()
     unless username?
       callback({code: 401, body: "Must provide a username when logging in."})
     unless password?

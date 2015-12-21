@@ -6,14 +6,14 @@ module.exports = (config, calculatorResults) ->
   noLongerInProcess = []
   stillInProcess = []
   asOfDateString = "2015-12-18"  # TODO: Fix this
-  asOfDate = new Date(asOfDateString)
+  asOfDate = new Date(asOfDateString).valueOf()
   for row in calculatorResults
     if row._ValidTo_lastValue > asOfDateString
       row.x = asOfDate
       row.dateLabel = 'still in process as of ' + asOfDateString
       stillInProcess.push(row)
     else
-      row.x = new Date(row._ValidTo_lastValue)
+      row.x = new Date(row._ValidTo_lastValue).valueOf()
       noLongerInProcess.push(row)
       row.dateLabel = row._ValidTo_lastValue
     row.y = row.ticks / 8 / 5  # Assumes 5 work-day week and 8 hours per day  TODO: Upgrade to use config info

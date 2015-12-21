@@ -34,79 +34,73 @@ TiPChart = React.createClass(
       unless deepEqual(cachedConfig, @state.config)
         @setState({config: cachedConfig})
 
-    lumenizeCalculatorConfig = {
-      "config": {
-        "query": {"Priority": 1},
-        "stateFilter": {"State": {"$in": ["In Progress", "Accepted"]}},
-        "granularity": "hour",
-        "tz": "America/Chicago",
-        "endBefore": "2015-12-18T03:36:12.662Z",
-        "uniqueIDField": "_EntityID",
-        "trackLastValueForTheseFields": ["_ValidTo", "Points"]
-      }
-    }
-
-    console.log('lumenizeCalculatorConfig', lumenizeCalculatorConfig)
-
-    request("/time-in-state", lumenizeCalculatorConfig, (err, response) =>
-      console.log('err', err)
-      console.log('response', response)
-      if @isMounted()
-        calculatorResults = tipCalculator({userConfig: @state.userConfig, lumenizeCalculatorConfig}, response.body)
-        series = calculatorResults.series
-
-        scatterChartConfig = {
-
-          chart: {
-            type: 'bubble',
-            zoomType: 'x'
-          },
-          legend: {
-            enabled: true
-          },
-          title: {
-            text: 'Time in Process (TiP)'
-          },
-          subtitle: {
-            text: ''
-          },
-          xAxis: {
-            type: 'datetime'
-          },
-          yAxis: {
-            title: {
-              text: 'Weeks in process'
-            }
-          },
-          tooltip: {
-            useHTML: true,
-            headerFormat: '<table>',
-            pointFormat: '<tr><th colspan="2"><h3>{point.name}</h3></th></tr>' +
-              '<tr><th>Last in process:</th><td>{point.dateLabel}</td></tr>' +
-              '<tr><th>Weeks in process:</th><td>{point.y}</td></tr>' +
-              '<tr><th>Size:</th><td>{point.z}</td></tr>',
-            footerFormat: '</table>',
-            followPointer: true
-          },
-          # plotOptions: {
-          #   series: {
-          #     dataLabels: {
-          #       enabled: true,
-          #       format: '{point.name}'
-          #     }
-          #   }
-          # },
-          series: series
+      lumenizeCalculatorConfig = {
+        "config": {
+          "query": {"Priority": 1},
+          "stateFilter": {"State": {"$in": ["In Progress", "Accepted"]}},
+          "granularity": "hour",
+          "tz": "America/Chicago",
+          "endBefore": "2015-12-18T03:36:12.662Z",
+          "uniqueIDField": "_EntityID",
+          "trackLastValueForTheseFields": ["_ValidTo", "Points"]
         }
+      }
 
-        if deepEqual({a:1}, {b:2})
-          console.log('is equal', deepEqual({a:1}, {b:2}))
-        unless deepEqual(cachedConfig, scatterChartConfig)
-          JSONStorage.setItem('tip', scatterChartConfig)  # TODO: Use hash
-          @setState({
-            config: scatterChartConfig
-          })
-    )
+      request("/time-in-state", lumenizeCalculatorConfig, (err, response) =>
+        if @isMounted()
+          calculatorResults = tipCalculator({userConfig: @state.userConfig, lumenizeCalculatorConfig}, response.body)
+          series = calculatorResults.series
+
+          scatterChartConfig = {
+
+            chart: {
+              type: 'bubble',
+              zoomType: 'x'
+            },
+            legend: {
+              enabled: true
+            },
+            title: {
+              text: 'Time in Process (TiP)'
+            },
+            subtitle: {
+              text: ''
+            },
+            xAxis: {
+              type: 'datetime'
+            },
+            yAxis: {
+              title: {
+                text: 'Weeks in process'
+              }
+            },
+            tooltip: {
+              useHTML: true,
+              headerFormat: '<table>',
+              pointFormat: '<tr><th colspan="2"><h3>{point.name}</h3></th></tr>' +
+                '<tr><th>Last in process:</th><td>{point.dateLabel}</td></tr>' +
+                '<tr><th>Weeks in process:</th><td>{point.y}</td></tr>' +
+                '<tr><th>Size:</th><td>{point.z}</td></tr>',
+              footerFormat: '</table>',
+              followPointer: true
+            },
+            # plotOptions: {
+            #   series: {
+            #     dataLabels: {
+            #       enabled: true,
+            #       format: '{point.name}'
+            #     }
+            #   }
+            # },
+            series: series
+          }
+
+          unless deepEqual(cachedConfig, scatterChartConfig)
+            JSONStorage.setItem('tip', scatterChartConfig)  # TODO: Use hash
+            @setState({
+              config: scatterChartConfig
+            })
+      )
 
   render: () ->
     return (

@@ -2,9 +2,11 @@ React = require('react')
 
 _ = require('lodash')
 
-{Styles, TextField, FlatButton} = require('material-ui')
-# {StyleResizable, StylePropable} = Mixins  # I think this is safe to remove
+{Styles, TextField, FlatButton, Mixins} = require('material-ui')
+{StylePropable} = Mixins  # I think this is safe to have removed StyleResizable, but not sure
 {Spacing, Colors, Typography} = Styles
+ThemeManager = Styles.ThemeManager
+DefaultRawTheme = Styles.LightRawTheme
 
 FullWidthSection = require('../full-width-section')
 request = require('../../api-request')
@@ -13,20 +15,32 @@ JSONStorage = require('../../JSONStorage')
 
 module.exports = React.createClass(
 
-  # mixins: [StyleResizable]  # I think it's safe to not have this here
+  mixins: [StylePropable]  # I think it's safe to not StyleResizable here, but not sure what that does
+
+  getInitialState: () ->
+    muiTheme = ThemeManager.getMuiTheme(DefaultRawTheme)
+    return {
+      message: 'Login'
+      messageColor: DefaultRawTheme.palette.primary1Color
+      loginButtonDisabled: false
+      muiTheme
+    }
 
   handleLogin: (event) ->
     username = @refs.username.getValue()
     password = @refs.password.getValue()
-    request('/login', {username, password}, (err, response) ->
+    @state.loginButtonDisabled = true
+    @forceUpdate()  # Seems to be needed to trigger disabling of button
+    request('/login', {username, password}, (err, response) =>
+      @setState({loginButtonDisabled: false})
       if err?
-        console.dir('error in handle login callback', err)
+        @setState({
+          message: err.response.body
+          messageColor: DefaultRawTheme.palette.accent1Color
+        })
       else
         # Save the session
-        console.log('response', response)
         JSONStorage.setItem('session', response.body)
-        console.log('response.body should be session', response.body)
-        console.log('history from within handleLogin. Looking for nextPathname or nextState', history)
         nextPathname = JSONStorage.getItem('nextPathname')
         if nextPathname?
           history.replace(nextPathname)
@@ -34,9 +48,15 @@ module.exports = React.createClass(
           history.replace('/')
     )
 
+  childContextTypes:
+    muiTheme: React.PropTypes.object
 
-  render: () ->
+  getChildContext: () ->
+    return {
+      muiTheme: @state.muiTheme
+    }
 
+  getStyles: () ->
     styles =
       spacer:
         paddingTop: Spacing.desktopKeylineIncrement
@@ -54,6 +74,12 @@ module.exports = React.createClass(
         letterSpacing: 0
         color: Typography.textDarkBlack
 
+    return styles
+
+  render: () ->
+
+    styles = @getStyles()
+
     return (
       <div style={styles.spacer}>
         <FullWidthSection
@@ -61,6 +87,7 @@ module.exports = React.createClass(
           useContent={true}
           contentStyle={styles.content}
           className="login">
+          <div style={color: @state.messageColor}>{@state.message}</div>
           <div>
             <TextField
               ref='username'
@@ -74,8 +101,9 @@ module.exports = React.createClass(
               hintText="Password"
               floatingLabelText="Password"
               type="password"
+              onEnterKeyDown={@handleLogin}
             />
-            <FlatButton style={left:10} label="Login" primary={true} onTouchTap={@handleLogin} />
+            <FlatButton style={left:10} label="Login" primary={true} onTouchTap={@handleLogin} disabled={@state.loginButtonDisabled}/>
           </div>
         </FullWidthSection>
       </div>
