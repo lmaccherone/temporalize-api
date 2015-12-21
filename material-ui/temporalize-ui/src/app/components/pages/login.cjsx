@@ -9,6 +9,7 @@ _ = require('lodash')
 FullWidthSection = require('../full-width-section')
 request = require('../../api-request')
 history = require('../../history')
+JSONStorage = require('../../JSONStorage')
 
 module.exports = React.createClass(
 
@@ -23,12 +24,14 @@ module.exports = React.createClass(
       else
         # Save the session
         console.log('response', response)
-        localStorage.setItem('session', JSON.stringify(response.body))
+        JSONStorage.setItem('session', response.body)
         console.log('response.body should be session', response.body)
         console.log('history from within handleLogin. Looking for nextPathname or nextState', history)
-        whereHeaded = localStorage.getItem('whereHeaded')
-        localStorage.removeItem('whereHeaded')
-        history.replace(whereHeaded)
+        nextPathname = JSONStorage.getItem('nextPathname')
+        if nextPathname?
+          history.replace(nextPathname)
+        else
+          history.replace('/')
     )
 
 

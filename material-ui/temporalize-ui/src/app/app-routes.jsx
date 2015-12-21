@@ -5,6 +5,8 @@ import {
   IndexRoute,
 } from 'react-router';
 
+import * as JSONStorage from './JSONStorage'
+
 // Here we define all our material-ui ReactComponents.
 import Master from './components/master';
 import Home from './components/pages/home';
@@ -50,13 +52,19 @@ import TextFields from './components/pages/components/text-fields';
 import TimePicker from './components/pages/components/time-picker';
 import Toolbars from './components/pages/components/toolbars';
 
-function requireAuth(nextState, replaceState) {
-  let session = localStorage.getItem('session');
+function requiresAuth(nextState, replaceState) {
+  let session = JSONStorage.getItem('session');
+  JSONStorage.setItem('nextPathname', nextState.location.pathname);
   if (! session) {
-    localStorage.setItem('whereHeaded', nextState.location.pathname);
     replaceState({ nextPathname: nextState.location.pathname }, '/login');
   }
 }
+
+function doesNotRequireAuth(nextState, replaceState) {
+  JSONStorage.setItem('nextPathname', nextState.location.pathname);
+}
+
+let nextPathname = JSONStorage.getItem('nextPathname');
 
 /**
  * Routes: https://github.com/rackt/react-router/blob/master/docs/api/components/Route.md
@@ -69,24 +77,24 @@ function requireAuth(nextState, replaceState) {
  */
 const AppRoutes = (
   <Route path="/" component={Master}>
-    <Route path="home" component={Home} />
+    <Route path="home" component={Home} onEnter={doesNotRequireAuth} />
 
     <Route path="login" component={Login} />
 
     <Redirect from="analyze" to="/analyze/tip" />
-    <Route path="analyze" component={Analyze} onEnter={requireAuth}>
+    <Route path="analyze" component={Analyze} onEnter={requiresAuth}>
       <Route path="tip" component={TiP} />
     </Route>
 
     <Redirect from="customization" to="/customization/themes" />
-    <Route path="customization" component={Customization}>
+    <Route path="customization" component={Customization} onEnter={doesNotRequireAuth}>
       <Route path="colors" component={Colors} />
       <Route path="themes" component={Themes} />
       <Route path="inline-styles" component={InlineStyles} />
     </Route>
 
     <Redirect from="components" to="/components/app-bar" />
-    <Route path="components" component={Components}>
+    <Route path="components" component={Components} onEnter={doesNotRequireAuth}>
       <Route path="app-bar" component={AppBar} />
       <Route path="auto-complete" component={AutoComplete} />
       <Route path="avatar" component={Avatar} />

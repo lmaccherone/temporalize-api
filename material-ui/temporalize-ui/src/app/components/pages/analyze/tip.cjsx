@@ -13,6 +13,7 @@ superagent = require('superagent/lib/client')  # TODO: Use my abstracted api-req
 
 tipCalculator = require('./tipCalculator')
 request = require('../../../api-request')
+JSONStorage = require('../../../JSONStorage')
 
 deepEqual = (obj1, obj2) ->
   return _.where([obj1], obj2).length is 1
@@ -20,14 +21,14 @@ deepEqual = (obj1, obj2) ->
 TiPChart = React.createClass(
 
   getInitialState: () ->
-    cachedConfig = JSON.parse(localStorage.getItem('tip'))  # TODO: Update this to be a hash of 'tip' + @state.userConfig
+    cachedConfig = JSONStorage.getItem('tip')  # TODO: Update this to be a hash of 'tip' + @state.userConfig
     unless cachedConfig?
       cachedConfig = {}
     return {config: cachedConfig}
 
   componentDidMount: () ->
     if @isMounted()
-      cachedConfig = JSON.parse(localStorage.getItem('tip'))  # TODO: Use the hash
+      cachedConfig = JSONStorage.getItem('tip')  # TODO: Use the hash
       unless cachedConfig?
        cachedConfig = {}
       unless deepEqual(cachedConfig, @state.config)
@@ -45,7 +46,11 @@ TiPChart = React.createClass(
       }
     }
 
+    console.log('lumenizeCalculatorConfig', lumenizeCalculatorConfig)
+
     request("/time-in-state", lumenizeCalculatorConfig, (err, response) =>
+      console.log('err', err)
+      console.log('response', response)
       if @isMounted()
         calculatorResults = tipCalculator({userConfig: @state.userConfig, lumenizeCalculatorConfig}, response.body)
         series = calculatorResults.series
@@ -97,7 +102,7 @@ TiPChart = React.createClass(
         if deepEqual({a:1}, {b:2})
           console.log('is equal', deepEqual({a:1}, {b:2}))
         unless deepEqual(cachedConfig, scatterChartConfig)
-          localStorage.setItem('tip', JSON.stringify(scatterChartConfig))  # TODO: Use hash
+          JSONStorage.setItem('tip', scatterChartConfig)  # TODO: Use hash
           @setState({
             config: scatterChartConfig
           })

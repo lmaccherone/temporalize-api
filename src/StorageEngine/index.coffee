@@ -479,7 +479,8 @@ module.exports = class StorageEngine
       documents = result?.all
       if err?
         @_debug("Got error during login fetching user", err)
-        callback(err)
+        callback({code: err.code, body: err.body})
+        return
       else if documents.length > 1
         callback({code: 400, body: "Found more than one user with username: #{username}. Database corruption is likely"})
       else if documents.length < 1
@@ -879,7 +880,7 @@ module.exports = class StorageEngine
     queryConfig = {query: modifiedQuery}
     @query(sessionID, queryConfig, (err, result) ->
       if err?
-        return callback(err.code, err.body)
+        return callback({code: err.code, body: err.body})
       calculator = new lumenize.TimeInStateCalculator(config)
       today = new Date()
       startOn = new Date(today.valueOf() - 30*1000*60*60*24).toISOString()
@@ -895,7 +896,7 @@ module.exports = class StorageEngine
       config.query = {}
     @query(sessionID, {query: config.query}, (err, result) ->
       if err?
-        return callback(err.code, err.body)
+        return callback({code: err.code, body: err.body})
       calculator = new lumenize.TimeSeriesCalculator(config)
       today = new Date()
       startOn = new Date(today.valueOf() - 30*1000*60*60*24).toISOString()
