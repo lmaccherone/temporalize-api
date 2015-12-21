@@ -22,6 +22,7 @@ module.exports = React.createClass(
         console.dir('error in handle login callback', err)
       else
         # Save the session
+        console.log('response', response)
         localStorage.setItem('session', JSON.stringify(response.body))
         console.log('response.body should be session', response.body)
         console.log('history from within handleLogin. Looking for nextPathname or nextState', history)

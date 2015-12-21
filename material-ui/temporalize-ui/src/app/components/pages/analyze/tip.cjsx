@@ -12,6 +12,7 @@ superagent = require('superagent/lib/client')  # TODO: Use my abstracted api-req
 {StyleResizable} = Mixins
 
 tipCalculator = require('./tipCalculator')
+request = require('../../../api-request')
 
 deepEqual = (obj1, obj2) ->
   return _.where([obj1], obj2).length is 1
@@ -44,7 +45,7 @@ TiPChart = React.createClass(
       }
     }
 
-    superagent.post("/time-in-state").accept('json').send(lumenizeCalculatorConfig).end((err, response) =>
+    request("/time-in-state", lumenizeCalculatorConfig, (err, response) =>
       if @isMounted()
         calculatorResults = tipCalculator({userConfig: @state.userConfig, lumenizeCalculatorConfig}, response.body)
         series = calculatorResults.series
