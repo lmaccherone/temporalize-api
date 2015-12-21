@@ -205,8 +205,8 @@ const Master = React.createClass({
         href="/#/home">
         <FontIcon
           className="muidocs-icon-action-home"
-          color={Colors.grey300}
-          hoverColor={Colors.yellow100}
+          color={DefaultRawTheme.palette.alternateTextColor}
+          hoverColor={DefaultRawTheme.palette.accent3Color}
           style={this.prepareStyles(styles.svgLogo)} />
         <span style={this.prepareStyles(styles.span)}>Lumenize</span>
       </EnhancedButton>

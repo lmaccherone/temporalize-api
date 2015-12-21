@@ -11,6 +11,7 @@ import * as JSONStorage from './JSONStorage'
 import Master from './components/master';
 import Home from './components/pages/home';
 import Login from './components/pages/login';
+import SignUp from './components/pages/sign-up';
 
 import Analyze from './components/pages/analyze';
 import TiP from './components/pages/analyze/tip';
@@ -80,6 +81,8 @@ const AppRoutes = (
     <Route path="home" component={Home} onEnter={doesNotRequireAuth} />
 
     <Route path="login" component={Login} />
+
+    <Route path="sign-up" component={SignUp} onEnter={doesNotRequireAuth}/>
 
     <Redirect from="analyze" to="/analyze/tip" />
     <Route path="analyze" component={Analyze} onEnter={requiresAuth}>

@@ -22,17 +22,17 @@ module.exports = React.createClass(
     return {
       message: 'Login'
       messageColor: DefaultRawTheme.palette.primary1Color
-      loginButtonDisabled: false
+      buttonsDisabled: false
       muiTheme
     }
 
   handleLogin: (event) ->
+    @state.buttonsDisabled = true
     username = @refs.username.getValue()
     password = @refs.password.getValue()
-    @state.loginButtonDisabled = true
     @forceUpdate()  # Seems to be needed to trigger disabling of button
     request('/login', {username, password}, (err, response) =>
-      @setState({loginButtonDisabled: false})
+      @setState({buttonsDisabled: false})
       if err?
         @setState({
           message: err.response.body
@@ -47,6 +47,9 @@ module.exports = React.createClass(
         else
           history.replace('/')
     )
+
+  goToSignup: (event) ->
+    history.push('/sign-up')
 
   childContextTypes:
     muiTheme: React.PropTypes.object
@@ -94,6 +97,14 @@ module.exports = React.createClass(
               hintText="someone@somewhere.com"
               floatingLabelText="Email"
             />
+            <FlatButton
+              style={left:10}
+              label="Sign up"
+              primary={false}
+              linkButton={true}
+              onTouchTap={@goToSignup}
+              disabled={@state.buttonsDisabled}
+            />
           </div>
           <div>
             <TextField
@@ -103,7 +114,13 @@ module.exports = React.createClass(
               type="password"
               onEnterKeyDown={@handleLogin}
             />
-            <FlatButton style={left:10} label="Login" primary={true} onTouchTap={@handleLogin} disabled={@state.loginButtonDisabled}/>
+            <FlatButton
+              style={left:10}
+              label="Login"
+              primary={true}
+              onTouchTap={@handleLogin}
+              disabled={@state.buttonsDisabled}
+            />
           </div>
         </FullWidthSection>
       </div>
