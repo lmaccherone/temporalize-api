@@ -27,10 +27,9 @@ module.exports = React.createClass(
     }
 
   handleLogin: (event) ->
-    @state.buttonsDisabled = true
+    @setState({buttonsDisabled: true})
     username = @refs.username.getValue()
     password = @refs.password.getValue()
-    @forceUpdate()  # Seems to be needed to trigger disabling of button
     request('/login', {username, password}, (err, response) =>
       @setState({buttonsDisabled: false})
       if err?
@@ -88,8 +87,7 @@ module.exports = React.createClass(
         <FullWidthSection
           style={styles.root}
           useContent={true}
-          contentStyle={styles.content}
-          className="login">
+          contentStyle={styles.content}>
           <div style={color: @state.messageColor}>{@state.message}</div>
           <div>
             <TextField

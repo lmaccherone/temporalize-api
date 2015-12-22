@@ -30,7 +30,8 @@
     "react-swipeable-views": "^0.3.0",
     "rfc6902-json-diff": "^0.1.2",
     "style-loader": "0.13.0",
-    "superagent": "^1.6.1"
+    "superagent": "^1.6.1",
+    "zxcvbn": "^4.2.0"
   },
   "devDependencies": {
     "cjsx-loader": "^2.1.0",

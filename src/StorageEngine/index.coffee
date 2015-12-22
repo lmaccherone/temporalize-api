@@ -407,7 +407,6 @@ module.exports = class StorageEngine
     # Call startHandler
 
 
-
   upsertUser: (sessionID, user, password, callback) =>  # GET /upsert-user
     # You can either provide the password as a field inside the user entity or as a seperate parameter
     # Since Temporalize owns this entity type, the temporalPolicy is always 'VALID_TIME'
@@ -511,7 +510,7 @@ module.exports = class StorageEngine
               @sessionCacheByUsername[user.username] = session
               callback(null, session)
             else
-              callback({code: 401, body: "Password does not match"})
+              callback({code: 401, body: "Incorrect password"})
         )
       else
         callback({code: 400, body: "Unexpected error during login"})
