@@ -2,7 +2,7 @@ React = require('react')
 
 _ = require('lodash')
 
-{Styles, TextField, FlatButton, Mixins} = require('material-ui')
+{Styles, TextField, RaisedButton, FlatButton, Mixins} = require('material-ui')
 {StylePropable} = Mixins  # I think this is safe to have removed StyleResizable, but not sure
 {Spacing, Colors, Typography} = Styles
 ThemeManager = Styles.ThemeManager
@@ -95,14 +95,16 @@ module.exports = React.createClass(
               hintText="someone@somewhere.com"
               floatingLabelText="Email"
             />
-            <FlatButton
+            &nbsp;
+            <RaisedButton
               style={left:10}
-              label="Sign up"
-              primary={false}
-              linkButton={true}
-              onTouchTap={@goToSignup}
+              label="Login"
+              primary={true}
+              onTouchTap={@handleLogin}
               disabled={@state.buttonsDisabled}
             />
+            &nbsp;
+            <a href='#/sign-up'>Sign up</a>
           </div>
           <div>
             <TextField
@@ -112,14 +114,8 @@ module.exports = React.createClass(
               type="password"
               onEnterKeyDown={@handleLogin}
             />
-            <FlatButton
-              style={left:10}
-              label="Login"
-              primary={true}
-              onTouchTap={@handleLogin}
-              disabled={@state.buttonsDisabled}
-            />
           </div>
+
         </FullWidthSection>
       </div>
     )
