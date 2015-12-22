@@ -1,4 +1,5 @@
-# TODO: Make all use of username lowercase
+# TODO: If upsert is missing a _TenantID and the user is not _IsTemporalizeSuperUser, then use the user's _TenantID
+# TODO: If upsert is missing _EntityID, then generate one.
 
 HashRing = require('hashring')
 crypto = require('crypto')
@@ -406,10 +407,37 @@ module.exports = class StorageEngine
 
     # Call startHandler
 
+  upsertTenant: (sessionID, tenant, callback) =>  # GET /upsert-tenant
+    # Since Temporalize owns this entity type, the temporalPolicy is always 'VALID_TIME'
+    console.log('entering upsertTenant', tenant)
+    if sessionID?
+      @_getSession(sessionID, (err, session) =>
+        if session.user._IsTemporalizeSuperUser or tenant[@topLevelPartitionField] in session.user.tenantIDsICanAdmin
+          @_upsertTenant(tenant, callback)
+        else
+          callback({
+            code: 401,
+            body: "User with username: #{session.user.username} does not have permission to administer tenant with id: #{tenant[@topLevelPartitionField]}"
+          })
+          return
+      )
+    else
+      callback({code: 401, body: "Missing sessionID"})
+
+  _upsertTenant: (tenant, callback) =>
+    unless tenant.name? and tenant.name.length > 0
+      callback({code: 400, body: "Missing name"})
+    tenant._IsTemporalizeTenant = true
+    @_upsert(tenant, 'VALID_TIME', callback)
+
+  createNewTenant: (sessionID, tenant, adminUser, callback) =>
+
+
 
   upsertUser: (sessionID, user, password, callback) =>  # GET /upsert-user
     # You can either provide the password as a field inside the user entity or as a seperate parameter
     # Since Temporalize owns this entity type, the temporalPolicy is always 'VALID_TIME'
+    @_debug("Upserting user with username: #{user.username}")
     unless callback?
       callback = password
     unless user.tenantIDsICanAdmin?
@@ -429,7 +457,7 @@ module.exports = class StorageEngine
             body: "User with username: #{session.user.username} does not have permission to write to tenant with id: #{user[@topLevelPartitionField]}"
           })
           return
-    )
+      )
     else
       callback({code: 401, body: "Missing sessionID"})
 
@@ -453,6 +481,9 @@ module.exports = class StorageEngine
     if session?
       delete @sessionCacheByUsername[user.username]
       delete @sessionCacheByID[session.id]
+    user.username = user.username.toLowerCase()
+    user.tenantIDsICanWrite = _.union(user.tenantIDsICanWrite, user.tenantIDsICanAdmin)
+    user.tenantIDsICanRead = _.union(user.tenantIDsICanRead, user.tenantIDsICanWrite)
     if password?
       user.salt = crypto.randomBytes(128).toString('base64')
       crypto.pbkdf2(password, user.salt, 10000, 512, (err, dk) =>
@@ -464,10 +495,10 @@ module.exports = class StorageEngine
           @_upsert(user, 'VALID_TIME', callback)
       )
     else
-      user.username = user.username.toLowerCase()
       @_upsert(user, 'VALID_TIME', callback)
 
   login: (username, password, callback) =>
+    @_debug("Attempting login for user with username: #{username}")
     username = username.toLowerCase()
     unless username?
       callback({code: 401, body: "Must provide a username when logging in."})
@@ -567,6 +598,7 @@ module.exports = class StorageEngine
               if err?
                 f({code: 400, body: "Error writing config at end of transaction handler"})
               else
+                # TODO: On second upsert, the below only returns the first version. Should probably not return anything but _EntityIDs
                 transaction.callback(err, transaction.response, transaction.headers)
             )
     return f
@@ -638,13 +670,13 @@ module.exports = class StorageEngine
 #            break
     transactionHandler = transaction.transactionHandler
     unless upsert[@topLevelPartitionField]?
-      transactionHandler({code: 400, body: "Every row in upserts must have a #{@topLevelPartitionField} field"})
+      transactionHandler({code: 400, body: "Every row in upsert must have a #{@topLevelPartitionField} field"})
       return
     unless upsert[@secondLevelPartitionField]?
-      transactionHandler({code: 400, body: "Every row in upserts must have a #{@secondLevelPartitionField} field"})
+      transactionHandler({code: 400, body: "Every row in upsert must have a #{@secondLevelPartitionField} field"})
       return
     if upsert[@secondLevelPartitionField] in transaction.entityIDsForThisTransaction
-      transactionHandler({code: 400, body: "#{@secondLevelPartitionField} must be not be duplicated in upsert list"})
+      transactionHandler({code: 400, body: "_EntityID: #{@secondLevelPartitionField} is duplicated in upsert list"})
       return
     else
       transaction.entityIDsForThisTransaction.push(upsert[@secondLevelPartitionField])
@@ -672,7 +704,7 @@ module.exports = class StorageEngine
           transactionHandler({code: 403, body: "Got more than one document with _ValidTo = #{@HIGHEST_DATE_STRING} for #{@secondLevelPartitionField} = #{upsert[@secondLevelPartitionField]}"})
           return
         else if response.length is 1  # Found an old version of this entity. Upgrade.
-# TODO: If none of the fields are different, do nothing
+          # TODO: If none of the fields are different, do nothing
           @_debug("Found old version for #{@secondLevelPartitionField}: #{upsert[@secondLevelPartitionField]}.")
           oldVersion = response[0]
           newVersion = _.cloneDeep(oldVersion)
@@ -680,7 +712,7 @@ module.exports = class StorageEngine
           newVersion._PreviousValues = {}
           nothingChanged = true
           for key, value of upsert
-            if upsert[key]?  # This is intentionally not value? because value might be null
+            if upsert[key]?  # This is intentionally not value? because value might be null. The upsertTest confirms this works as expected
               newVersion[key] = value
               if value isnt oldVersion[key]
                 nothingChanged = false

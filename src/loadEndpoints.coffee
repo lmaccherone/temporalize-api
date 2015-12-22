@@ -59,6 +59,12 @@ module.exports = (server, se, callback) ->
     se.upsertUser(sessionID, user, getStandardCallback(req, res, next))
   )
 
+  server.post('/upsert-tenant', (req, res, next) ->
+    sessionID = req.body.sessionID
+    tenant = req.body.tenant
+    se.upsertTenant(sessionID, tenant, getStandardCallback(req, res, next))
+  )
+
   server.post('/upsert', (req, res, next) ->
     sessionID = req.body.sessionID
     if req.body.upsert?

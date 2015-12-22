@@ -28,8 +28,8 @@ user =
 
 session = null
 
-firstUpsert = {_TenantID: 'a', _EntityID: 1, a: 1, c: 3}
-secondUpsert = {_TenantID: 'a', _EntityID: 1, b: 20, c: null}
+firstTenantValues = {_TenantID: 'a', _EntityID: 'a', name: 'Acme, Inc.'}
+secondTenantValues = {_TenantID: 'a', _EntityID: 'a', name: 'Wile E. Coyote, Inc.'}
 
 module.exports =
 
@@ -56,26 +56,27 @@ module.exports =
             console.dir(err)
             throw new Error("Got unexpeced error trying to login as normal user")
           session = obj
-          client.post('/upsert', {sessionID: session.id, upsert: firstUpsert}, (err, req, res, obj) ->
-
+          client.post('/upsert-tenant', {sessionID: session.id, tenant: firstTenantValues}, (err, req, res, obj) ->
+            if err?
+              console.dir(err)
+              throw new Error("Got unexpeced error trying to upsert first tenant")
             first = obj
-            test.equal(first.a, 1)
-            test.equal(first.c, 3)
-            test.ok(not first.b?)
+            test.equal(first._EntityID, firstTenantValues._EntityID)
+            test.equal(first.name, firstTenantValues.name)
+            test.ok(first._IsTemporalizeTenant)
 
-            client.post('/upsert', {sessionID: session.id, upsert: secondUpsert}, (err, req, res, obj) ->
+            client.post('/upsert-tenant', {sessionID: session.id, tenant: secondTenantValues}, (err, req, res, obj) ->
+              if err?
+                console.dir(err)
+                throw new Error("Got unexpeced error trying to upsert second tenant")
 
-              # TODO: This is turned off because on the second upsert, it actually returns the first value
+              # TODO: The checks below are missing because the second upsert incorrectly returns the first version.
 #              second = obj
-#              test.equal(second.a, 1)
-#              test.equal(second.b, 20)
-#              test.ok(! second.c?)
-#              console.log(second)
+#              console.log('second: ', second)
 
               query =
                 topLevelPartitionKey: 'a'
-                secondLevelPartitionKey: 1
-                fields: ["a", "b", "c"]
+                secondLevelPartitionKey: 'a'
 
               client.post('/query', {sessionID: session.id, query}, (err, req, res, obj) ->
                 if err?
@@ -83,8 +84,8 @@ module.exports =
                   throw new Error("Got unexected error trying to execute query")
 
                 test.equal(obj.all.length, 2)
-                test.deepEqual(obj.all[0], { a: 1, c: 3, _TenantID: 'a' })
-                test.deepEqual(obj.all[1], { a: 1, b: 20, _TenantID: 'a' })
+                test.deepEqual(obj.all[0].name, firstTenantValues.name)
+                test.deepEqual(obj.all[1].name, secondTenantValues.name)
 
                 test.ok(obj.stats?)
 

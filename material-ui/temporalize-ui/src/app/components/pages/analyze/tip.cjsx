@@ -72,7 +72,8 @@ TiPChart = React.createClass(
             yAxis: {
               title: {
                 text: 'Weeks in process'
-              }
+              },
+              min: 0
             },
             tooltip: {
               useHTML: true,
