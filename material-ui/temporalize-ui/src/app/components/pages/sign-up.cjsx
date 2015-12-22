@@ -3,7 +3,7 @@ React = require('react')
 _ = require('lodash')
 zxcvbn = require('zxcvbn')  # TODO: Consider loading this from the web. It adds several hundred KB to the app.js
 
-{NavigationCancel, ActionCheckCircle} = require('material-ui/lib/svg-icons')
+{NavigationCancel, ActionCheckCircle} = require('material-ui/lib/svg-icons')  # Split this out to make app.js smaller
 {Avatar, Styles, TextField, FlatButton, RaisedButton, FontIcon, Mixins} = require('material-ui')
 {StylePropable} = Mixins  # I think this is safe to have removed StyleResizable, but not sure
 {Spacing, Colors, Typography} = Styles
@@ -178,6 +178,12 @@ module.exports = React.createClass(
           contentStyle={styles.content}>
           <div style={color: @state.messageColor}>
             {@state.message}
+            &nbsp;
+            <Avatar
+              icon={<@state.validationIcon />}
+              color={@state.messageColor}
+              backgroundColor={"#EEEEEE"}>
+            </Avatar>
           </div>
           <div>
             <TextField
@@ -187,21 +193,6 @@ module.exports = React.createClass(
               onChange={@validateInput}
               onEnterKeyDown={@handleSignUp}
             />
-            &nbsp;
-            <RaisedButton
-              style={left:10}
-              label="Sign up"
-              primary={true}
-              linkButton={true}
-              onTouchTap={@handleSignUp}
-              disabled={@state.buttonsDisabled}
-            />
-            &nbsp;
-            <Avatar
-              icon={<@state.validationIcon />}
-              color={@state.messageColor}
-              backgroundColor={"#EEEEEE"}>
-            </Avatar>
           </div>
           <div>
             <TextField
@@ -221,6 +212,16 @@ module.exports = React.createClass(
               type="password"
               onChange={@validateInput}
               onEnterKeyDown={@handleSignUp}
+            />
+          </div>
+          <div>
+            <RaisedButton
+              style={left:10}
+              label="Sign up"
+              primary={true}
+              linkButton={true}
+              onTouchTap={@handleSignUp}
+              disabled={@state.buttonsDisabled}
             />
           </div>
         </FullWidthSection>

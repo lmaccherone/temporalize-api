@@ -95,16 +95,6 @@ module.exports = React.createClass(
               hintText="someone@somewhere.com"
               floatingLabelText="Email"
             />
-            &nbsp;
-            <RaisedButton
-              style={left:10}
-              label="Login"
-              primary={true}
-              onTouchTap={@handleLogin}
-              disabled={@state.buttonsDisabled}
-            />
-            &nbsp;
-            <a href='#/sign-up'>Sign up</a>
           </div>
           <div>
             <TextField
@@ -115,7 +105,17 @@ module.exports = React.createClass(
               onEnterKeyDown={@handleLogin}
             />
           </div>
-
+          <div>
+            <RaisedButton
+              style={left:10}
+              label="Login"
+              primary={true}
+              onTouchTap={@handleLogin}
+              disabled={@state.buttonsDisabled}
+            />
+            &nbsp;
+            <a href='#/sign-up'>Sign up</a>
+          </div>
         </FullWidthSection>
       </div>
     )
