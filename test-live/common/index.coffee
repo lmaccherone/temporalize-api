@@ -13,7 +13,7 @@ module.exports =
     setUp = (callback) ->
       console.log('starting setUp')
       client.basicAuth(username, password)
-      client.post('/delete-partition', {}, (err, req, res, obj) ->
+      client.post('/delete-partition', {username, password}, (err, req, res, obj) ->
         if err?
           throw new Error(err)
         else

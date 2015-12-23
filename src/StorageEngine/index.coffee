@@ -1,6 +1,8 @@
 # TODO: If upsert is missing a _TenantID and the user is not _IsTemporalizeSuperUser, then use the user's _TenantID
 # TODO: If upsert is missing _EntityID, then generate one.
 
+# TODO: A-2 Disallow changing _TenantID and _EntityID on upsert
+
 HashRing = require('hashring')
 crypto = require('crypto')
 zxcvbn = require('zxcvbn')
@@ -99,7 +101,7 @@ module.exports = class StorageEngine
         @_client = config.client
         new WrappedClient(@_client)
       else
-        @client = new WrappedClient(null, null, null, 'Strong')  # TODO: Change to session consistency
+        @client = new WrappedClient(null, null, null, 'Session')  # TODO: Change to session consistency
 
     # Unless it already exists, create first database
     @_debug("Checking existence or creating database: #{@firstTopLevelID}")
@@ -409,7 +411,6 @@ module.exports = class StorageEngine
 
   upsertTenant: (sessionID, tenant, callback) =>  # GET /upsert-tenant
     # Since Temporalize owns this entity type, the temporalPolicy is always 'VALID_TIME'
-    console.log('entering upsertTenant', tenant)
     if sessionID?
       @_getSession(sessionID, (err, session) =>
         if session.user._IsTemporalizeSuperUser or tenant[@topLevelPartitionField] in session.user.tenantIDsICanAdmin
@@ -427,11 +428,80 @@ module.exports = class StorageEngine
   _upsertTenant: (tenant, callback) =>
     unless tenant.name? and tenant.name.length > 0
       callback({code: 400, body: "Missing name"})
+    unless tenant._TenantID? and tenant._EntityID? and tenant._TenantID is tenant._EntityID
+      callback({code: 400, body: "_TenantID and _EntityID are either missing or don't match"})
     tenant._IsTemporalizeTenant = true
+    # TODO: check to see if the new name is already in use and error if it is
     @_upsert(tenant, 'VALID_TIME', callback)
 
-  createNewTenant: (sessionID, tenant, adminUser, callback) =>
+  createTenant: (tenant, adminUser, callback) =>
+    ###
+    This is a higher level operation that has more checking and automation than upsertTenant. In particular, you must
+    pass in the first admin user for the tenant. Neither the tenant nor the user can exist before calling.
+    Also, the user does not need to be logged in (thus no sessionID).
+    It's intended to be used in a sign up process, where the user attempting to sign up is not logged in.
+    ###
 
+    unless tenant?.name?
+      callback({code: 400, body: "Must provide a tenant.name when creating a tenant"})
+    if tenant?._EntityID?
+      callback({code: 400, body: "Must not provide tenant._EntityID when creating a tenant"})
+    if tenant?._TenantID?
+      callback({code: 400, body: "Must not provide tenant._TenantID when creating a tenant"})
+
+    unless adminUser?.username?
+      callback({code: 400, body: "Must provide adminUser.username when creating a tenant"})
+    unless adminUser?.password?
+      callback({code: 400, body: "Must provide adminUser.password when creating a tenant"})
+    if adminUser?._EntityID?
+      callback({code: 400, body: "Must not provide adminUser._EntityID when creating a tenant"})
+    if adminUser?._TenantID?
+      callback({code: 400, body: "Must not provide adminUser._TenantID when creating a tenant"})
+
+    # confirm that tenant.name and adminUser.username are not already in use
+    tenantQuery = {name: tenant.name}
+    userQuery = {username: adminUser.username}
+
+    async.parallel({
+      tenantResult: (callback) =>
+        @_query({query: tenantQuery}, callback)
+      userResult: (callback) =>
+        @_query({query: userQuery}, callback)
+    }, (err, results) =>  # results is now equals to: {tenantResult: ..., userResult: ...}
+      if err?
+        callback(err)
+      else
+        unless results.tenantResult.all.length is 0
+          callback({code: 400, body: "Tenant name: #{tenant.name} already exists"})
+          return
+        unless results.userResult.all.length is 0
+          callback({code: 400, body: "User with username: #{adminUser.username} already exists"})
+          return
+
+        # build list of upserts
+        tenantGUID = getGUID()
+        userGUID = getGUID()
+        tenant._EntityID = tenantGUID
+        tenant._TenantID = tenantGUID
+        adminUser._EntityID = userGUID
+        adminUser._TenantID = tenantGUID
+        adminUser.tenantIDsICanAdmin = [tenantGUID]
+        async.parallel({
+          tenant: (callback) =>
+            @_upsertTenant(tenant, callback)
+          adminUser: (callback) =>
+            @_upsertUser(adminUser, callback)
+        }, (err, results) =>
+          if err?
+            # TODO: A-2 Roll back
+            callback(err)
+            return
+          tenant = results.tenant[0]
+          adminUser = results.adminUser
+          response = {tenant, adminUser}
+          callback(null, response)
+        )
+    )
 
 
   upsertUser: (sessionID, user, password, callback) =>  # GET /upsert-user
@@ -492,10 +562,22 @@ module.exports = class StorageEngine
           return
         else
           user.hash = dk.toString('base64')
-          @_upsert(user, 'VALID_TIME', callback)
+#          @_upsert(user, 'VALID_TIME', callback)
+          @_upsert(user, 'VALID_TIME', @_getUpsertUserUpsertCallback(callback))
       )
     else
-      @_upsert(user, 'VALID_TIME', callback)
+#      @_upsert(user, 'VALID_TIME', callback)
+      @_upsert(user, 'VALID_TIME', @_getUpsertUserUpsertCallback(callback))
+
+  _getUpsertUserUpsertCallback: (callback) ->
+    f = (err, response) ->
+      user = response
+      delete user.hash
+      delete user.salt
+      delete user._PreviousValues.hash
+      delete user._PreviousValues.salt
+      callback(err, user)
+    return f
 
   login: (username, password, callback) =>
     @_debug("Attempting login for user with username: #{username}")
@@ -577,6 +659,7 @@ module.exports = class StorageEngine
       unless transaction.err?
         if err?
           # TODO: A-2 - Roll back transaction. Don't forget to remove _UpdateTransactionID and reset _ValidTo of old versions
+          console.error("*** DATABASE IS NOW CORRUPT DUE TO LACK OF ROLL BACK ***")
           transaction.err = err
           transaction.callback(err)
         else
@@ -687,7 +770,6 @@ module.exports = class StorageEngine
 
     query = {_ValidTo: @HIGHEST_DATE_STRING}
     query[@secondLevelPartitionField] = upsert[@secondLevelPartitionField]
-    #    queryString = sqlFromMongo(queryObject, 'c', '*')
     querySpec = {query}
     partitionList = @_resolveToListOfPartitions(upsert[@topLevelPartitionField], upsert[@secondLevelPartitionField])
     if partitionList.length isnt 1
@@ -798,16 +880,20 @@ module.exports = class StorageEngine
             callback(err)
           authorizedForAll = true
           unauthorizedTenantIDs = []
+          newAll = []
           for row in result.all
             unless row[@topLevelPartitionField]?
               callback({code: 400, body: "Found documents without #{@topLevelPartitionField} field. Database corruption has likely occured"})
             if session.user._IsTemporalizeSuperUser or row[@topLevelPartitionField] in session.user.tenantIDsICanRead
-
+              if row._IsTemporalizeUser
+                delete row.hash
+                delete row.salt
+              newAll.push(row)
             else
               unauthorizedTenantIDs.push(row[@topLevelPartitionField])
               authorizedForAll = false
           if authorizedForAll
-            callback(err, result)
+            callback(err, {stats: result.stats, all: newAll})
           else
             callback({code: 401, body: "Unauthorized for TenantIDs indicated in unauthorizedTenantIDs", unauthorizedTenantIDs})
         )
