@@ -40,25 +40,18 @@ module.exports = React.createClass(
       @setState({buttonsDisabled: true})
       username = @refs.username.getValue()
       password = @refs.password.getValue()
-      request('/upsert-tenant', {newAdminUser: {username, password}}, (err, response) =>
-        @setState({buttonsDisabled: false})
+      organizationName = @refs.organizationName.getValue()
+      request('/create-tenant', {tenant: {name: organizationName}, adminUser: {username, password}}, (err, response) =>
+        # @setState({buttonsDisabled: false})
+        console.log('got back from /create-tenant', response)
         if err?
           @setState({
             message: err.response.body
             messageColor: DefaultRawTheme.palette.accent1Color
           })
         else
-          # Save the session
-          JSONStorage.setItem('session', response.body)
-          nextPathname = JSONStorage.getItem('nextPathname')
-          if nextPathname?
-            history.replace(nextPathname)
-          else
-            history.replace('/')
+          history.replace('/organization')
       )
-
-  goToLogin: (event) ->
-    history.push('/login')
 
   validateInput: (event) ->
     username = @refs.username.getValue()
@@ -112,6 +105,16 @@ module.exports = React.createClass(
       })
       return false
 
+    organizationName = @refs.organizationName.getValue()
+    if organizationName.length < 1
+      @setState({
+        validationIcon: NavigationCancel
+        message: "Organization name missing"
+        messageColor: DefaultRawTheme.palette.accent1Color
+        buttonsDisabled: true
+      })
+      return false
+
     # Everthing above passed so must be OK
     @setState({
       validationIcon: ActionCheckCircle
@@ -120,23 +123,6 @@ module.exports = React.createClass(
       buttonsDisabled: false
     })
     return true
-
-  # checkPasswords: (event) ->
-  #   password = @refs.password.getValue()
-  #   reenterPassword = @refs.reenterPassword.getValue()
-  #   if reenterPassword.length > 1
-  #     if @_passwordsMatch()
-  #       @setState({
-  #         validationIcon: ActionCheckCircle
-  #         validationColor: Colors.green200
-  #       })
-  #     else
-  #       @setState({
-  #         validationIcon: NavigationCancel
-  #         validationColor: Colors.red200
-  #       })
-  #   else
-  #     @setState({validationIcon: 'nothing'})
 
   childContextTypes:
     muiTheme: React.PropTypes.object
@@ -210,6 +196,15 @@ module.exports = React.createClass(
               hintText="Reenter password"
               floatingLabelText="Reenter password"
               type="password"
+              onChange={@validateInput}
+              onEnterKeyDown={@handleSignUp}
+            />
+          </div>
+          <div>
+            <TextField
+              ref='organizationName'
+              hintText="Organization name"
+              floatingLabelText="Organization name"
               onChange={@validateInput}
               onEnterKeyDown={@handleSignUp}
             />

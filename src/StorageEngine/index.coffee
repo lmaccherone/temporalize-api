@@ -442,6 +442,7 @@ module.exports = class StorageEngine
     It's intended to be used in a sign up process, where the user attempting to sign up is not logged in.
     ###
 
+    @_debug("Creating new tenant for #{tenant.name} #{adminUser.username}")
     unless tenant?.name?
       callback({code: 400, body: "Must provide a tenant.name when creating a tenant"})
     if tenant?._EntityID?

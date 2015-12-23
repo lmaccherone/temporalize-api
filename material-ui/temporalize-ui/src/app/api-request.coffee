@@ -8,10 +8,10 @@ module.exports = (endpoint, body, callback) ->
   ###
   unless callback?
     callback = body
-    # body = null
+    body = null
 
   session = JSONStorage.getItem('session')
-  if session?.id? or endpoint is '/login'
+  if session?.id? or endpoint is '/login' or endpoint is '/create-tenant'
     if body?
       if session?.id?
         body.sessionID = session.id
