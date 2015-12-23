@@ -230,14 +230,9 @@ const Master = React.createClass({
                 route="/analyze" />
               <Tab
                 value="2"
-                label="CUSTOMIZATION"
+                label="CONFIG"
                 style={styles.tab}
-                route="/customization"/>
-              <Tab
-                value="3"
-                label="COMPONENTS"
-                style={styles.tab}
-                route="/components"/>
+                route="/config"/>
             </Tabs>
           </div>
         </Paper>
@@ -247,8 +242,7 @@ const Master = React.createClass({
 
   _getSelectedIndex() {
     return this.props.history.isActive('/analyze') ? '1' :
-      this.props.history.isActive('/customization') ? '2' :
-      this.props.history.isActive('/components') ? '3' : '0';  // TODO: This duplicates the number I'm using for Analyze and probably hides something else like home
+      this.props.history.isActive('/config') ? '2' : '0';  // TODO: This duplicates the number I'm using for Analyze and probably hides something else like home
   },
 
   _handleTabChange(value, e, tab) {
@@ -259,8 +253,7 @@ const Master = React.createClass({
   _getAppBar() {
     let title =
       this.props.history.isActive('/analyze') ? 'Analyze' :
-      this.props.history.isActive('/customization') ? 'Customization' :
-      this.props.history.isActive('/components') ? 'Components' : '';
+      this.props.history.isActive('/config') ? 'Config' : '';
 
     let githubButton = (
       <IconButton

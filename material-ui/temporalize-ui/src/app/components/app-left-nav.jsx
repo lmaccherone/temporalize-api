@@ -70,12 +70,8 @@ const AppLeftNav = React.createClass({
             primaryText="Analyze"
           />
           <ListItem
-            value="customization"
-            primaryText="Customization"
-          />
-          <ListItem
-            value="components"
-            primaryText="Components"
+            value="config"
+            primaryText="Config"
           />
         </SelectableList>
         <Divider />

@@ -161,14 +161,9 @@ const HomePage = React.createClass({
           //img="images/get-started.svg"  // TODO: Need to replace this with an image for analyze
           firstChild={true}/>
         <HomeFeature
-          heading="Customization"
-          route="/customization"
+          heading="Config"
+          route="/config"
           img="images/css-framework.svg" />
-        <HomeFeature
-          heading="Components"
-          route="/components"
-          img="images/components.svg"
-          lastChild={true}/>
       </FullWidthSection>
     );
   },
