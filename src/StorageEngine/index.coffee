@@ -473,10 +473,10 @@ module.exports = class StorageEngine
         callback(err)
       else
         unless results.tenantResult.all.length is 0
-          callback({code: 400, body: "Tenant name: #{tenant.name} already exists"})
+          callback({code: 400, body: "Tenant #{tenant.name} already exists"})
           return
         unless results.userResult.all.length is 0
-          callback({code: 400, body: "User with username: #{adminUser.username} already exists"})
+          callback({code: 400, body: "User #{adminUser.username} already exists"})
           return
 
         # build list of upserts

@@ -43,14 +43,14 @@ module.exports = React.createClass(
       organizationName = @refs.organizationName.getValue()
       request('/create-tenant', {tenant: {name: organizationName}, adminUser: {username, password}}, (err, response) =>
         # @setState({buttonsDisabled: false})
-        console.log('got back from /create-tenant', response)
         if err?
           @setState({
+            validationIcon: NavigationCancel
             message: err.response.body
             messageColor: DefaultRawTheme.palette.accent1Color
           })
         else
-          history.replace('/organization')
+          history.push('/organization')
       )
 
   validateInput: (event) ->
