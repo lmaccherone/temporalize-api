@@ -31,3 +31,14 @@ body {
   border: 2px solid #FF9800;
   background-color: #4CAF50;
 }
+
+.center {
+  height:60px;
+  width:60px;
+  padding:10px;
+  position:absolute;
+  margin-top:-30px;
+  margin-left:-30px;
+  top:50%;
+  left:50%;
+}
