@@ -31,7 +31,6 @@ const {StylePropable, StyleResizable} = Mixins;
 const {Typography} = Styles;
 const ThemeManager = Styles.ThemeManager;
 const DefaultRawTheme = Styles.LightRawTheme;
-const DarkRawTheme = Styles.DarkRawTheme;
 
 const OrganizationPage = React.createClass({
 
@@ -55,7 +54,6 @@ const OrganizationPage = React.createClass({
   getInitialState() {
     return {
       muiTheme: this.context.muiTheme ? this.context.muiTheme : ThemeManager.getMuiTheme(DarkRawTheme),
-      isThemeDark: false,
       dialogOpen: false,
       leftNavOpen: false,
     };

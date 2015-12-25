@@ -2,7 +2,8 @@ React = require('react')
 
 _ = require('lodash')
 
-{Styles, TextField, RaisedButton, FlatButton, Mixins} = require('material-ui')
+{Styles, TextField, RaisedButton, FlatButton, Mixins,
+  Card, CardHeader, CardText, CardActions} = require('material-ui')
 {StylePropable} = Mixins  # I think this is safe to have removed StyleResizable, but not sure
 {Spacing, Colors, Typography} = Styles
 ThemeManager = Styles.ThemeManager
@@ -20,8 +21,7 @@ module.exports = React.createClass(
   getInitialState: () ->
     muiTheme = ThemeManager.getMuiTheme(DefaultRawTheme)
     return {
-      message: 'Login'
-      messageColor: DefaultRawTheme.palette.primary1Color
+      message: "hello"
       buttonsDisabled: false
       muiTheme
     }
@@ -35,9 +35,11 @@ module.exports = React.createClass(
       if err?
         @setState({
           message: err.response.body
-          messageColor: DefaultRawTheme.palette.accent1Color
         })
       else
+        @setState({
+          message: "Login successful"
+        })
         # Save the session
         JSONStorage.setItem('session', response.body)
         nextPathname = JSONStorage.getItem('nextPathname')
@@ -60,12 +62,10 @@ module.exports = React.createClass(
 
   getStyles: () ->
     styles =
-      spacer:
-        paddingTop: Spacing.desktopKeylineIncrement
       root:
         backgroundColor: Colors.grey200
       content:
-        maxWidth: 700
+        width: 290
         padding: 0
         margin: '0 auto'
         fontWeight: Typography.fontWeightLight
@@ -75,6 +75,8 @@ module.exports = React.createClass(
         marginBottom: 13
         letterSpacing: 0
         color: Typography.textDarkBlack
+      actions:
+        margin: 10
 
     return styles
 
@@ -83,20 +85,24 @@ module.exports = React.createClass(
     styles = @getStyles()
 
     return (
-      <div style={styles.spacer}>
-        <FullWidthSection
-          style={styles.root}
-          useContent={true}
-          contentStyle={styles.content}>
-          <div style={color: @state.messageColor}>{@state.message}</div>
-          <div>
+      <FullWidthSection
+        style={styles.root}
+        useContent={true}
+        contentStyle={styles.content}>
+        <Card initiallyExpanded={true} expandable={false}>
+          <CardHeader
+            subtitleStyle={color: DefaultRawTheme.palette.accent1Color}
+            actAsExpander={true}
+            title="Login"
+            subtitle={@state.message}
+            showExpandableButton={false}>
+          </CardHeader>
+          <CardText expandable={false}>
             <TextField
               ref='username'
               hintText="someone@somewhere.com"
               floatingLabelText="Email"
             />
-          </div>
-          <div>
             <TextField
               ref='password'
               hintText="Password"
@@ -104,19 +110,16 @@ module.exports = React.createClass(
               type="password"
               onEnterKeyDown={@handleLogin}
             />
-          </div>
-          <div>
-            <RaisedButton
-              style={left:10}
-              label="Login"
-              primary={true}
-              onTouchTap={@handleLogin}
-              disabled={@state.buttonsDisabled}
-            />
-            &nbsp;
-            <a href='#/sign-up'>Sign up</a>
-          </div>
-        </FullWidthSection>
-      </div>
+          </CardText>
+        </Card>
+        <RaisedButton
+          style={styles.actions}
+          label="Login"
+          primary={true}
+          onTouchTap={@handleLogin}
+          disabled={@state.buttonsDisabled}
+        />
+        <a style={styles.actions} href='#/sign-up'>Sign up</a>
+      </FullWidthSection>
     )
 )

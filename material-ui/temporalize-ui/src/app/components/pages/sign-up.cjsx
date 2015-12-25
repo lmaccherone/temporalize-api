@@ -4,7 +4,8 @@ _ = require('lodash')
 zxcvbn = require('zxcvbn')  # TODO: Consider loading this from the web. It adds several hundred KB to the app.js
 
 {NavigationCancel, ActionCheckCircle} = require('material-ui/lib/svg-icons')  # Split this out to make app.js smaller
-{Avatar, Styles, TextField, FlatButton, RaisedButton, FontIcon, Mixins} = require('material-ui')
+{Avatar, Styles, TextField, FlatButton, RaisedButton, FontIcon, Mixins
+  Card, CardHeader, CardText, CardActions} = require('material-ui')
 {StylePropable} = Mixins  # I think this is safe to have removed StyleResizable, but not sure
 {Spacing, Colors, Typography} = Styles
 ThemeManager = Styles.ThemeManager
@@ -24,7 +25,7 @@ module.exports = React.createClass(
   getInitialState: () ->
     muiTheme = ThemeManager.getMuiTheme(DefaultRawTheme)
     return {
-      message: 'Sign up'
+      message: ''
       messageColor: DefaultRawTheme.palette.primary1Color
       buttonsDisabled: true
       validationIcon: 'nothing'
@@ -50,7 +51,7 @@ module.exports = React.createClass(
             messageColor: DefaultRawTheme.palette.accent1Color
           })
         else
-          history.push('/organization')
+          history.push('/config/organization')
       )
 
   validateInput: (event) ->
@@ -118,7 +119,7 @@ module.exports = React.createClass(
     # Everthing above passed so must be OK
     @setState({
       validationIcon: ActionCheckCircle
-      message: 'Sign up'
+      message: ''
       messageColor: DefaultRawTheme.palette.primary1Color
       buttonsDisabled: false
     })
@@ -134,12 +135,10 @@ module.exports = React.createClass(
 
   getStyles: () ->
     styles =
-      spacer:
-        paddingTop: Spacing.desktopKeylineIncrement
       root:
         backgroundColor: Colors.grey200
       content:
-        maxWidth: 700
+        width: 290
         padding: 0
         margin: '0 auto'
         fontWeight: Typography.fontWeightLight
@@ -149,6 +148,8 @@ module.exports = React.createClass(
         marginBottom: 13
         letterSpacing: 0
         color: Typography.textDarkBlack
+      actions:
+        margin: 10
 
     return styles
 
@@ -157,21 +158,19 @@ module.exports = React.createClass(
     styles = @getStyles()
 
     return (
-      <div style={styles.spacer}>
-        <FullWidthSection
-          style={styles.root}
-          useContent={true}
-          contentStyle={styles.content}>
-          <div style={color: @state.messageColor}>
-            {@state.message}
-            &nbsp;
-            <Avatar
-              icon={<@state.validationIcon />}
-              color={@state.messageColor}
-              backgroundColor={"#EEEEEE"}>
-            </Avatar>
-          </div>
-          <div>
+      <FullWidthSection
+        style={styles.root}
+        useContent={true}
+        contentStyle={styles.content}>
+        <Card initiallyExpanded={true} expandable={false}>
+          <CardHeader
+            subtitleStyle={color: DefaultRawTheme.palette.accent1Color}
+            actAsExpander={true}
+            title="Sign up"
+            subtitle={@state.message}
+            showExpandableButton={false}>
+          </CardHeader>
+          <CardText expandable={false}>
             <TextField
               ref='username'
               hintText="someone@somewhere.com"
@@ -179,8 +178,6 @@ module.exports = React.createClass(
               onChange={@validateInput}
               onEnterKeyDown={@handleSignUp}
             />
-          </div>
-          <div>
             <TextField
               ref='password'
               hintText="Pasword"
@@ -189,8 +186,6 @@ module.exports = React.createClass(
               onChange={@validateInput}
               onEnterKeyDown={@handleSignUp}
             />
-          </div>
-          <div>
             <TextField
               ref='reenterPassword'
               hintText="Reenter password"
@@ -199,8 +194,6 @@ module.exports = React.createClass(
               onChange={@validateInput}
               onEnterKeyDown={@handleSignUp}
             />
-          </div>
-          <div>
             <TextField
               ref='organizationName'
               hintText="Organization name"
@@ -208,18 +201,16 @@ module.exports = React.createClass(
               onChange={@validateInput}
               onEnterKeyDown={@handleSignUp}
             />
-          </div>
-          <div>
-            <RaisedButton
-              style={left:10}
-              label="Sign up"
-              primary={true}
-              linkButton={true}
-              onTouchTap={@handleSignUp}
-              disabled={@state.buttonsDisabled}
-            />
-          </div>
-        </FullWidthSection>
-      </div>
+          </CardText>
+        </Card>
+        <RaisedButton
+          style={styles.actions}
+          label="Sign up"
+          primary={true}
+          linkButton={true}
+          onTouchTap={@handleSignUp}
+          disabled={@state.buttonsDisabled}
+        />
+      </FullWidthSection>
     )
 )
