@@ -40,7 +40,7 @@ const AppLeftNav = React.createClass({
       color: Typography.textFullWhite,
       lineHeight: Spacing.desktopKeylineIncrement + 'px',
       fontWeight: Typography.fontWeightLight,
-      backgroundColor: Colors.cyan500,
+      backgroundColor: DefaultRawTheme.palette.primary1Color,
       paddingLeft: Spacing.desktopGutter,
       marginBottom: 8,
     };

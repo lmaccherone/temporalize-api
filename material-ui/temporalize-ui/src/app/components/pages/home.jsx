@@ -35,7 +35,7 @@ const HomePage = React.createClass({
   _getHomePageHero() {
     let styles = {
       root: {
-        backgroundColor: Colors.cyan500,
+        backgroundColor: DefaultRawTheme.palette.primary1Color,
         overflow: 'hidden',
       },
       svgLogo: {
