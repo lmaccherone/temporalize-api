@@ -1,0 +1,30 @@
+To start the temporalize-api server (1st Terminal tab). You shouldn't need to do anything with this. It should never stop:
+cd ~/Documents/temporalize-api
+npm start
+
+To start the UI server (2nd Terminal tab). This may stop from time to time and you'll have to restart it.
+cd ~/Documents/temporalize-api/material-ui/temporalize-ui
+npm start
+
+To see available colors in your browser (2nd to last Firefox tab):
+file:///Users/cassidyperkins/Documents/temporalize-api/material-ui/docs/build/index.html#/customization/colors
+
+To see YOUR color changes in your browser (last Firefox tab) for the light-raw-theme (which we'll use for AgileCraft):
+http://localhost:3000/#/config/themes
+Note: if the above address doesn't show the latest color changes then restart the UI server
+
+To see the dark-raw-theme (which we'll use as the starting point for Lumenize) click on the Dark Theme tab. 
+
+To log in to Lumenize:
+larry@maccherone.com
+BCltsn3^LlMF
+
+To edit the light-raw-theme (1st tab in Atom) edit:
+/Users/cassidyperkins/Documents/temporalize-api/material-ui/src/styles/raw-themes/light-raw-theme.js
+
+You can only see your changes by editing light-raw-theme. When you get it to the point you like
+it and are ready to start working on the agilecraft-raw-theme, then cut and paste
+the light-raw-theme contents over to lumenize-raw-theme (second tab in Atom) and save it.
+
+When you are done with the agilecraft-raw-theme, then cut and paste the light-raw-theme over to
+agilecraft-raw-theme.js (3rd tab in Atom) and save it.
