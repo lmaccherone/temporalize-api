@@ -3,8 +3,7 @@ React = require('react')
 _ = require('lodash')
 zxcvbn = require('zxcvbn')  # TODO: Consider loading this from the web. It adds several hundred KB to the app.js
 
-{NavigationCancel, ActionCheckCircle} = require('material-ui/lib/svg-icons')  # Split this out to make app.js smaller
-{Avatar, Styles, TextField, FlatButton, RaisedButton, FontIcon, Mixins
+{Avatar, Styles, TextField, FlatButton, RaisedButton, Mixins
   Card, CardHeader, CardText, CardActions} = require('material-ui')
 {StylePropable} = Mixins  # I think this is safe to have removed StyleResizable, but not sure
 {Spacing, Colors, Typography} = Styles
@@ -16,7 +15,7 @@ request = require('../../api-request')
 history = require('../../history')
 JSONStorage = require('../../JSONStorage')
 
-validPasswordRegex = /.+@.+\..+/i
+validEmailRegex = /.+@.+\..+/i
 
 module.exports = React.createClass(
 
@@ -28,8 +27,11 @@ module.exports = React.createClass(
       message: ''
       messageColor: DefaultRawTheme.palette.primary1Color
       buttonsDisabled: true
-      validationIcon: 'nothing'
       muiTheme
+      emailErrorText: ''
+      passwordErrorText: ''
+      reenterPasswordErrorText: ''
+      organizationErrorText: ''
     }
 
   componentDidMount: () ->
@@ -43,87 +45,98 @@ module.exports = React.createClass(
       password = @refs.password.getValue()
       organizationName = @refs.organizationName.getValue()
       request('/create-tenant', {tenant: {name: organizationName}, adminUser: {username, password}}, (err, response) =>
-        # @setState({buttonsDisabled: false})
         if err?
           @setState({
-            validationIcon: NavigationCancel
             message: err.response.body
-            messageColor: DefaultRawTheme.palette.accent1Color
           })
         else
-          history.push('/config/organization')
+          request('/login', {username, password}, (err, response) =>
+            if err?
+              @setState({
+                message: err.response.body
+              })
+            else
+              @setState({
+                message: "Login successful"
+              })
+              # Save the session
+              JSONStorage.setItem('session', response.body)
+              history.replace('/config/organization')
+          )
       )
 
-  validateInput: (event) ->
+  validateEmail: () ->
     username = @refs.username.getValue()
     if username.length < 1
       @setState({
-        validationIcon: NavigationCancel
-        message: 'Missing email'
-        messageColor: DefaultRawTheme.palette.accent1Color
-        buttonsDisabled: true
+        emailErrorText: 'Required'
       })
       return false
-    if not validPasswordRegex.test(username)
+    if not validEmailRegex.test(username)
       @setState({
-        validationIcon: NavigationCancel
-        message: 'Invalid email'
-        messageColor: DefaultRawTheme.palette.accent1Color
-        buttonsDisabled: true
+        emailErrorText: 'Invalid email'
       })
       return false
+    # Everything OK
+    @setState({emailErrorText: ''})
+    return true
 
+  validatePassword: () ->
     password = @refs.password.getValue()
     if password.length < 1
       @setState({
-        validationIcon: NavigationCancel
-        message: 'Missing password'
-        messageColor: DefaultRawTheme.palette.accent1Color
-        buttonsDisabled: true
+        passwordErrorText: 'Required'
       })
       return false
     passwordStrength = zxcvbn(password)
     if passwordStrength.score < 2
       if passwordStrength.feedback.warning.length > 0
-        message = passwordStrength.feedback.warning
+        text = passwordStrength.feedback.warning
       else
-        message = 'Password too weak'
+        text = 'Password too weak'
       @setState({
-        validationIcon: NavigationCancel
-        message: message
-        messageColor: DefaultRawTheme.palette.accent1Color
-        buttonsDisabled: true
+        passwordErrorText: text
       })
       return false
+    # Everything OK
+    @setState({passwordErrorText: ''})
+    return true
 
+  validateReenterPassword: () ->
+    password = @refs.password.getValue()
     reenterPassword = @refs.reenterPassword.getValue()
     if password isnt reenterPassword
       @setState({
-        validationIcon: NavigationCancel
-        message: "Passwords don't match"
-        messageColor: DefaultRawTheme.palette.accent1Color
-        buttonsDisabled: true
+        reenterPasswordErrorText: "Passwords don't match"
       })
       return false
+    # Everything OK
+    @setState({reenterPasswordErrorText: ''})
+    return true
 
+  validateOrganization: () ->
     organizationName = @refs.organizationName.getValue()
     if organizationName.length < 1
       @setState({
-        validationIcon: NavigationCancel
-        message: "Organization name missing"
-        messageColor: DefaultRawTheme.palette.accent1Color
-        buttonsDisabled: true
+        organizationErrorText: "Required"
       })
       return false
-
-    # Everthing above passed so must be OK
-    @setState({
-      validationIcon: ActionCheckCircle
-      message: ''
-      messageColor: DefaultRawTheme.palette.primary1Color
-      buttonsDisabled: false
-    })
+    # Everything OK
+    @setState({organizationErrorText: ''})
     return true
+
+  validateInput: () ->
+    buttonsDisabled = false
+    if ! @validateEmail()
+      buttonsDisabled = true
+    if ! @validatePassword()
+      buttonsDisabled = true
+    if ! @validateReenterPassword()
+      buttonsDisabled = true
+    if ! @validateOrganization()
+      buttonsDisabled = true
+    @setState({buttonsDisabled})
+    return ! buttonsDisabled
 
   childContextTypes:
     muiTheme: React.PropTypes.object
@@ -175,6 +188,7 @@ module.exports = React.createClass(
               ref='username'
               hintText="someone@somewhere.com"
               floatingLabelText="Email"
+              errorText={@state.emailErrorText}
               onChange={@validateInput}
               onEnterKeyDown={@handleSignUp}
             />
@@ -182,6 +196,7 @@ module.exports = React.createClass(
               ref='password'
               hintText="Pasword"
               floatingLabelText="Password"
+              errorText={@state.passwordErrorText}
               type="password"
               onChange={@validateInput}
               onEnterKeyDown={@handleSignUp}
@@ -190,6 +205,7 @@ module.exports = React.createClass(
               ref='reenterPassword'
               hintText="Reenter password"
               floatingLabelText="Reenter password"
+              errorText={@state.reenterPasswordErrorText}
               type="password"
               onChange={@validateInput}
               onEnterKeyDown={@handleSignUp}
@@ -198,6 +214,7 @@ module.exports = React.createClass(
               ref='organizationName'
               hintText="Organization name"
               floatingLabelText="Organization name"
+              errorText={@state.organizationErrorText}
               onChange={@validateInput}
               onEnterKeyDown={@handleSignUp}
             />

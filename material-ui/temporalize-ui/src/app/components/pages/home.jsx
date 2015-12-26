@@ -8,7 +8,6 @@ const {StylePropable, StyleResizable} = Mixins;
 const {Colors, Spacing, Typography} = Styles;
 const DefaultRawTheme = Styles.LightRawTheme;
 
-
 const HomePage = React.createClass({
 
   mixins: [

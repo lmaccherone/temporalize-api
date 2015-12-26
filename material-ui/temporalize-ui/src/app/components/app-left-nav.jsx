@@ -11,6 +11,7 @@ import Divider from 'material-ui/lib/divider';
 import {SelectableContainerEnhance} from 'material-ui/hoc/selectable-enhance';
 
 const {Colors, Spacing, Typography} = Styles;
+const DefaultRawTheme = Styles.LightRawTheme;
 const {StylePropable} = Mixins;
 const SelectableList = SelectableContainerEnhance(List);
 
