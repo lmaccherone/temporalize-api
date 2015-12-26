@@ -1,16 +1,11 @@
 import React from 'react';
 import AppLeftNav from './app-left-nav';
 import FullWidthSection from './full-width-section';
-import {AppBar,
-      AppCanvas,
-      IconButton,
-      EnhancedButton,
-      Mixins,
-      Styles,
-      Tab,
-      Tabs,
-      Paper,
-      FontIcon} from 'material-ui';
+import {AppBar, AppCanvas, IconButton, EnhancedButton,  Mixins, Styles, Avatar,
+      Tab, Tabs, Paper, FontIcon} from 'material-ui';
+
+import md5 from 'md5';
+import JSONStorage from '../JSONStorage'
 
 const {StylePropable} = Mixins;
 const {Colors, Spacing, Typography} = Styles;
@@ -115,6 +110,9 @@ const Master = React.createClass({
         href="https://github.com/lmaccherone/temporalize-api"
         linkButton={true}/>
     );
+
+    let userOrLogin = this._getUserOrLogin();
+
     return (
       <AppCanvas>
         {githubButton}
@@ -132,7 +130,7 @@ const Master = React.createClass({
             <a style={this.prepareStyles(styles.a)}
               href="https://github.com/lmaccherone/Lumenize/graphs/contributors"> Contributors</a>
           </p>
-          {githubButton2}
+          {userOrLogin}
         </FullWidthSection>
       </AppCanvas>
     );
@@ -250,17 +248,29 @@ const Master = React.createClass({
     this.setState({tabIndex: this._getSelectedIndex()});
   },
 
+  _getUserOrLogin() {
+    let session = JSONStorage.getItem('session');
+    let userOrLogin = null;
+    if (session) {
+      let usernameMD5 = md5(session.user.username);
+      let gravatarURL = "http://www.gravatar.com/avatar/" + usernameMD5
+      userOrLogin = (
+        <Avatar src={gravatarURL} />
+      );
+    } else {
+      userOrLogin = (
+        <Avatar src={"nothing"} />
+      );  // Change above to font icon of login symbol
+    };
+    return (userOrLogin);
+  },
+
   _getAppBar() {
     let title =
       this.props.history.isActive('/analyze') ? 'Analyze' :
       this.props.history.isActive('/config') ? 'Config' : '';
 
-    let githubButton = (
-      <IconButton
-        iconClassName="muidocs-icon-custom-github"
-        href="https://github.com/lmaccherone/temporalize-api"
-        linkButton={true}/>
-    );
+    let userOrLogin = this._getUserOrLogin();
 
     return (
       <div>
@@ -268,9 +278,10 @@ const Master = React.createClass({
           onLeftIconButtonTouchTap={this._onLeftIconButtonTouchTap}
           title={title}
           zDepth={0}
-          iconElementRight={githubButton}
-          style={{position: 'absolute', top: 0}}/>
-      </div>);
+          iconElementRight={userOrLogin}
+          style={{position: 'absolute', top: 0}} />
+      </div>
+    );
   },
 
   _onLeftIconButtonTouchTap() {

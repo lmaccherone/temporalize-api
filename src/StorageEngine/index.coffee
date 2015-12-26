@@ -552,7 +552,7 @@ module.exports = class StorageEngine
     if session?
       delete @sessionCacheByUsername[user.username]
       delete @sessionCacheByID[session.id]
-    user.username = user.username.toLowerCase()
+    user.username = user.username.toLowerCase().trim()
     user.tenantIDsICanWrite = _.union(user.tenantIDsICanWrite, user.tenantIDsICanAdmin)
     user.tenantIDsICanRead = _.union(user.tenantIDsICanRead, user.tenantIDsICanWrite)
     if password?
@@ -582,7 +582,7 @@ module.exports = class StorageEngine
 
   login: (username, password, callback) =>
     @_debug("Attempting login for user with username: #{username}")
-    username = username.toLowerCase()
+    username = username.toLowerCase().trim()
     unless username?
       callback({code: 401, body: "Must provide a username when logging in."})
     unless password?
