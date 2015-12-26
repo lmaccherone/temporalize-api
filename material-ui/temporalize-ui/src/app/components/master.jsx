@@ -141,7 +141,7 @@ const Master = React.createClass({
   _getTabs() {
     let styles = {
       root: {
-        backgroundColor: Colors.cyan500,
+        backgroundColor: DefaultRawTheme.palette.primary1Color,
         position: 'fixed',
         height: 64,
         top: 0,
@@ -169,7 +169,7 @@ const Master = React.createClass({
       },
       svgLogo: {
         width: 65,
-        backgroundColor: Colors.cyan500,
+        backgroundColor: DefaultRawTheme.palette.primary1Color,
         position: 'absolute',
         top: 22,
       },
