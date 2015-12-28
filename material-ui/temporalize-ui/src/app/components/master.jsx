@@ -2,7 +2,10 @@ import React from 'react';
 import AppLeftNav from './app-left-nav';
 import FullWidthSection from './full-width-section';
 import {AppBar, AppCanvas, IconButton, EnhancedButton,  Mixins, Styles, Avatar,
-      Tab, Tabs, Paper, FontIcon} from 'material-ui';
+        FlatButton, IconMenu, MenuItem,
+        Tab, Tabs, Paper, FontIcon} from 'material-ui';
+
+import {ActionFace} from 'material-ui/lib/svg-icons';
 
 import md5 from 'md5';
 import JSONStorage from '../JSONStorage'
@@ -57,16 +60,17 @@ const Master = React.createClass({
         color: Colors.lightWhite,
         maxWidth: 335,
       },
-      github: {
+      login: {
         position: 'fixed',
         right: Spacing.desktopGutter / 2,
-        top: 8,
-        zIndex: 5,
-        color: 'white',
+        top: 8
       },
-      iconButton: {
-        color: darkWhite,
-      },
+      noMargin: {
+        margin: 0,
+        padding: 0,
+        left: 0,
+        top: 0
+      }
     };
   },
 
@@ -94,30 +98,9 @@ const Master = React.createClass({
   render() {
     let styles = this.getStyles();
 
-    let githubButton = (
-      <IconButton
-        iconStyle={styles.iconButton}
-        iconClassName="muidocs-icon-custom-github"
-        href="https://github.com/lmaccherone/temporalize-api"
-        linkButton={true}
-        style={styles.github} />
-    );
-
-    let githubButton2 = (
-      <IconButton
-        iconStyle={styles.iconButton}
-        iconClassName="muidocs-icon-custom-github"
-        href="https://github.com/lmaccherone/temporalize-api"
-        linkButton={true}/>
-    );
-
-    let userOrLogin = this._getUserOrLogin();
-
     return (
       <AppCanvas>
-        {githubButton}
         {this.state.renderTabs ? this._getTabs() : this._getAppBar()}
-
         {this.props.children}
         <AppLeftNav ref="leftNav" history={this.props.history} location={this.props.location} />
         <FullWidthSection style={styles.footer}>
@@ -130,7 +113,6 @@ const Master = React.createClass({
             <a style={this.prepareStyles(styles.a)}
               href="https://github.com/lmaccherone/Lumenize/graphs/contributors"> Contributors</a>
           </p>
-          {userOrLogin}
         </FullWidthSection>
       </AppCanvas>
     );
@@ -209,6 +191,8 @@ const Master = React.createClass({
         <span style={this.prepareStyles(styles.span)}>Lumenize</span>
       </EnhancedButton>
 
+    let userOrLogin = this._getUserOrLogin();
+
     return (
       <div>
         <Paper
@@ -233,6 +217,7 @@ const Master = React.createClass({
                 route="/config"/>
             </Tabs>
           </div>
+          {userOrLogin}
         </Paper>
       </div>
     );
@@ -250,19 +235,31 @@ const Master = React.createClass({
 
   _getUserOrLogin() {
     let session = JSONStorage.getItem('session');
-    let userOrLogin = null;
+    let styles = this.getStyles();
+    let iconButton = null;
+    let iconMenu = null;
     if (session) {
       let usernameMD5 = md5(session.user.username);
       let gravatarURL = "http://www.gravatar.com/avatar/" + usernameMD5
-      userOrLogin = (
+      iconButton = (
         <Avatar src={gravatarURL} />
       );
+      iconMenu = (
+        <IconMenu iconButtonElement={iconButton} style={styles.login}>
+          <MenuItem primaryText="Logout" />
+        </IconMenu>
+      )
     } else {
-      userOrLogin = (
-        <Avatar src={"nothing"} />
+      iconButton = (
+        <Avatar icon={<ActionFace />} />
       );  // Change above to font icon of login symbol
+      iconMenu = (
+        <IconMenu iconButtonElement={iconButton} style={styles.login}>
+          <MenuItem primaryText="Login" />
+        </IconMenu>
+      )
     };
-    return (userOrLogin);
+    return iconMenu;
   },
 
   _getAppBar() {
