@@ -13,7 +13,7 @@ To see YOUR color changes in your browser (last Firefox tab) for the light-raw-t
 http://localhost:3000/#/config/themes
 Note: if the above address doesn't show the latest color changes then restart the UI server
 
-To see the dark-raw-theme (which we'll use as the starting point for Lumenize) click on the Dark Theme tab. 
+To see the dark-raw-theme (which we'll use as the starting point for Lumenize) click on the Dark Theme tab.
 
 To log in to Lumenize:
 larry@maccherone.com
@@ -28,3 +28,13 @@ the light-raw-theme contents over to lumenize-raw-theme (second tab in Atom) and
 
 When you are done with the agilecraft-raw-theme, then cut and paste the light-raw-theme over to
 agilecraft-raw-theme.js (3rd tab in Atom) and save it.
+
+To send your results to me, go to GitHub (the purple cat icon):
+Commit (lower left) by typing a summary of your changes.
+Click on the Commit to Master button (lower left)
+Click on Sync (upper right)
+
+'#2a2b2b'
+lightBlue800
+deepOrange700
+blueGrey800
