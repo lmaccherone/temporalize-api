@@ -45,8 +45,9 @@ var config = {
     proxy: {
       '/time-in-state*': {target: 'http://localhost:1338', secure: false},
       '/time-series*': {target: 'http://localhost:1338', secure: false},
-      '/create-tenant*': {target: 'http://localhost:1338', secure: false}, 
+      '/create-tenant*': {target: 'http://localhost:1338', secure: false},
       '/login*': {target: 'http://localhost:1338', secure: false},
+      '/logout*': {target: 'http://localhost:1338', secure: false},
       '/hello*': {target: 'http://localhost:1338', secure: false}
     }
   },

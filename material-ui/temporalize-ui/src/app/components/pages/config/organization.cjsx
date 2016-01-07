@@ -15,6 +15,10 @@ module.exports = React.createClass(
 
   mixins: [StyleResizable]
 
+  componentDidMount: () ->
+    if @isMounted()
+      @validateInput()
+
   getStyles: () ->
     styles =
       actions:
@@ -29,20 +33,31 @@ module.exports = React.createClass(
       pageErrorText: 'Something'
     }
 
-  # validateEverything: () ->
-  #   unless validateName()
-  #     return false
-
   validateName: () ->
     name = @refs.name.getValue()
     if name.length < 1
-      newErrorText = "required"
-      result = false
-    else
-      newErrorText = ""
-      result = true
-    @setState({nameErrorText: newErrorText})
-    return result
+      @setState({nameErrorText: "Required"})
+      return false
+    @setState({nameErrorText: ''})
+    return true
+
+  validateInput: () ->
+    buttonsDisabled = false
+    if ! @validateName()
+      buttonsDisabled = true
+    @setState({buttonsDisabled})
+    return ! buttonsDisabled
+
+  handleSave: (event) ->
+    if @validateInput()
+      @setState({buttonsDisabled: true})
+      name = @refs.name.getValue()
+      request('/upsert-tenant', {name}, (err, response) =>
+        if err?
+          @setState({pageErrorText: err.response.body})
+        else
+          @setState({buttonsDisabled: false})
+      )
 
   render: () ->
 
@@ -63,14 +78,20 @@ module.exports = React.createClass(
               ref='name'
               hintText="Acme, Inc."
               floatingLabelText="Name"
-              onChange={@validateName}
-              onEnterKeyDown={@handleUpdate}
+              onChange={@validateInput}
+              onEnterKeyDown={@handleSave}
               errorText={@state.nameErrorText}
+              errorStyle={color: DefaultRawTheme.palette.accent1Color}
             />
           </CardText>
         </Card>
         <div>
-          <RaisedButton style={styles.actions} label="Update" primary={true}/>
+          <RaisedButton
+            style={styles.actions}
+            label="Save"
+            primary={true}
+            onTouchTap={@handleSave}
+            disabled={@state.buttonsDisabled}/>
           <RaisedButton style={styles.actions} label="Cancel" primary={false}/>
         </div>
       </div>

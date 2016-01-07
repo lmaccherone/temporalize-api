@@ -21,7 +21,7 @@ module.exports = React.createClass(
   getInitialState: () ->
     muiTheme = ThemeManager.getMuiTheme(DefaultRawTheme)
     return {
-      message: "hello"
+      message: ""
       buttonsDisabled: false
       muiTheme
     }
@@ -41,12 +41,14 @@ module.exports = React.createClass(
           message: "Login successful"
         })
         # Save the session
-        JSONStorage.setItem('session', response.body)
-        nextPathname = JSONStorage.getItem('nextPathname')
-        if nextPathname?
-          history.replace(nextPathname)
-        else
-          history.replace('/')
+        session = response.body
+        if session? and session.user? and session.id?
+          JSONStorage.setItem('session', response.body)
+          nextPathname = JSONStorage.getItem('nextPathname')
+          if nextPathname?
+            history.replace(nextPathname)
+          else
+            history.replace('/')
     )
 
   goToSignup: (event) ->

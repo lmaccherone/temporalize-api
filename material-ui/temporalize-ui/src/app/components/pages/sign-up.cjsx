@@ -24,8 +24,7 @@ module.exports = React.createClass(
   getInitialState: () ->
     muiTheme = ThemeManager.getMuiTheme(DefaultRawTheme)
     return {
-      message: ''
-      messageColor: DefaultRawTheme.palette.primary1Color
+      pageErrorText: ''
       buttonsDisabled: true
       muiTheme
       emailErrorText: ''
@@ -47,17 +46,17 @@ module.exports = React.createClass(
       request('/create-tenant', {tenant: {name: organizationName}, adminUser: {username, password}}, (err, response) =>
         if err?
           @setState({
-            message: err.response.body
+            pageErrorText: err.response.body
           })
         else
           request('/login', {username, password}, (err, response) =>
             if err?
               @setState({
-                message: err.response.body
+                pageErrorText: err.response.body
               })
             else
               @setState({
-                message: "Login successful"
+                pageErrorText: "Login successful"
               })
               # Save the session
               JSONStorage.setItem('session', response.body)
@@ -180,7 +179,7 @@ module.exports = React.createClass(
             subtitleStyle={color: DefaultRawTheme.palette.accent1Color}
             actAsExpander={true}
             title="Sign up"
-            subtitle={@state.message}
+            subtitle={@state.pageErrorText}
             showExpandableButton={false}>
           </CardHeader>
           <CardText expandable={false}>
@@ -188,35 +187,39 @@ module.exports = React.createClass(
               ref='username'
               hintText="someone@somewhere.com"
               floatingLabelText="Email"
-              errorText={@state.emailErrorText}
               onChange={@validateInput}
               onEnterKeyDown={@handleSignUp}
+              errorText={@state.emailErrorText}
+              errorStyle={color: DefaultRawTheme.palette.accent1Color}
             />
             <TextField
               ref='password'
               hintText="Pasword"
               floatingLabelText="Password"
-              errorText={@state.passwordErrorText}
               type="password"
               onChange={@validateInput}
               onEnterKeyDown={@handleSignUp}
+              errorText={@state.passwordErrorText}
+              errorStyle={color: DefaultRawTheme.palette.accent1Color}
             />
             <TextField
               ref='reenterPassword'
               hintText="Reenter password"
               floatingLabelText="Reenter password"
-              errorText={@state.reenterPasswordErrorText}
               type="password"
               onChange={@validateInput}
               onEnterKeyDown={@handleSignUp}
+              errorText={@state.reenterPasswordErrorText}
+              errorStyle={color: DefaultRawTheme.palette.accent1Color}
             />
             <TextField
               ref='organizationName'
-              hintText="Organization name"
+              hintText="Acme, Inc."
               floatingLabelText="Organization name"
-              errorText={@state.organizationErrorText}
               onChange={@validateInput}
               onEnterKeyDown={@handleSignUp}
+              errorText={@state.organizationErrorText}
+              errorStyle={color: DefaultRawTheme.palette.accent1Color}
             />
           </CardText>
         </Card>

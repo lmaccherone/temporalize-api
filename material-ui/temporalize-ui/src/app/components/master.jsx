@@ -8,7 +8,9 @@ import {AppBar, AppCanvas, IconButton, EnhancedButton,  Mixins, Styles, Avatar,
 import {ActionFace} from 'material-ui/lib/svg-icons';
 
 import md5 from 'md5';
-import JSONStorage from '../JSONStorage'
+import JSONStorage from '../JSONStorage';
+import history from '../history';
+import request from '../api-request';
 
 const {StylePropable} = Mixins;
 const {Colors, Spacing, Typography} = Styles;
@@ -233,6 +235,29 @@ const Master = React.createClass({
     this.setState({tabIndex: this._getSelectedIndex()});
   },
 
+  _onTouchUserMenu(e, item) {
+    let menuText = e.target.innerText;  // This is probably not the "right" way to get this but couldn't find the proper place
+    if (menuText == "Logout") {
+      let session = JSONStorage.getItem('session');
+      if (session) {
+        request('/logout', {sessionID: session.id}, function(err, response) {
+          // TODO: Add flare/toast here indicating err or successful logout
+          if (err) {
+            console.log('Logout failed: ' + JSON.stringify(err));
+          };
+          JSONStorage.removeItem('session');
+          history.push('/');
+        });
+      };
+    } else if (menuText == "Login") {
+      history.push('/login');
+    } else if (menuText == "Settings") {
+      history.push('/config/organization')
+    } else {
+      throw new Error("Unrecognized user menu item");
+    };
+  },
+
   _getUserOrLogin() {
     let session = JSONStorage.getItem('session');
     let styles = this.getStyles();
@@ -245,8 +270,9 @@ const Master = React.createClass({
         <Avatar src={gravatarURL} />
       );
       iconMenu = (
-        <IconMenu iconButtonElement={iconButton} style={styles.login}>
+        <IconMenu iconButtonElement={iconButton} style={styles.login} onItemTouchTap={this._onTouchUserMenu}>
           <MenuItem primaryText="Logout" />
+          <MenuItem primaryText="Settings" />
         </IconMenu>
       )
     } else {
@@ -254,7 +280,7 @@ const Master = React.createClass({
         <Avatar icon={<ActionFace />} />
       );  // Change above to font icon of login symbol
       iconMenu = (
-        <IconMenu iconButtonElement={iconButton} style={styles.login}>
+        <IconMenu iconButtonElement={iconButton} style={styles.login} onItemTouchTap={this._onTouchUserMenu}>
           <MenuItem primaryText="Login" />
         </IconMenu>
       )

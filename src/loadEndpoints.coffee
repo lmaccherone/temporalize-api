@@ -47,6 +47,12 @@ module.exports = (server, se, callback) ->
     se.login(username, password, getStandardCallback(req, res, next))
   )
 
+  server.post('/logout', (req, res, next) ->
+    sessionID = req.body.sessionID
+    console.log('got here')
+    se.logout(sessionID, getStandardCallback(req, res, next))
+  )
+
   server.post('/query', (req, res, next) ->
     sessionID = req.body.sessionID
     query = req.body.query

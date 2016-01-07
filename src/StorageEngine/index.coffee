@@ -632,11 +632,16 @@ module.exports = class StorageEngine
 
   logout: (sessionID, callback) =>
     # TODO: Upgrade this to work across servos by deleting sessions stored in database. Need to figure out how to delete the session cache on other servos.
-    session = @sessionCacheByID[sessionID]
-    if session?
-      delete @sessionCacheByID[sessionID]
-      delete @sessionCacheByUsername[session.user.username]
-    callback(null, true)  # Send back true even if session not found because they are already logged out.
+    @_debug("Attempting logout for sessionID: #{sessionID}")
+    if sessionID?
+      session = @sessionCacheByID[sessionID]
+      if session?
+        delete @sessionCacheByID[sessionID]
+        delete @sessionCacheByUsername[session.user.username]
+      @_debug("Logout successful for user with username: #{session.user.username}")
+      callback(null, true)  # Send back true even if session not found because they are already logged out.
+    else
+      callback({code: 400, body: "SessionID required on call to logout"})
 
   _getSession: (sessionID, callback) =>
     # TODO: Upgrade this to work across servos by pulling from sessions stored in database if not found in cache. Don't worry about purging the cache for other servos because that will happen next time purgeSessionCache() runs on that servo.
@@ -647,10 +652,12 @@ module.exports = class StorageEngine
         callback(null, session)
         return session
       else
-        delete @sessionCacheByID[sessionID]
-        delete @sessionCacheByUsername[session.user.username]
-        callback({code: 401, body: "Session expired"})
-        return
+        @logout(sessionID, (err, response) ->
+          if not err? and response
+            callback({code: 401, body: "Session expired"})
+          else
+            callback({code: 400, body: "Error logging out expired session"})  # I'm pretty sure, it's impossible to see this but it's here just in case
+        )
     else
       callback({code: 401, body: "Session not found"})
       return
