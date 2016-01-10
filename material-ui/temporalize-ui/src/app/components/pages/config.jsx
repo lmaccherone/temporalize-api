@@ -5,8 +5,6 @@ export default class Config extends React.Component {
 
   render() {
     let menuItems = [
-      {route: '/config/themes', text: 'Themes'},
-      {route: '/config/colors', text: 'Colors'},
       {route: '/config/organization', text: 'Organization'},
     ];
 

@@ -79,6 +79,7 @@ module.exports = React.createClass(
         color: Typography.textDarkBlack
       actions:
         margin: 10
+        color: DefaultRawTheme.palette.accent1Color
 
     return styles
 

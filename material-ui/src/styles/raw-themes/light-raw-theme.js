@@ -3,23 +3,29 @@ import ColorManipulator from '../../utils/color-manipulator';
 import Spacing from '../spacing';
 import zIndex from '../zIndex';
 
+/*
+ *  Light Theme is the default theme used in material-ui. It is guaranteed to
+ *  have all theme variables needed for every component. Variables not defined
+ *  in a custom theme will default to these values.
+ */
+
 export default {
   spacing: Spacing,
   fontFamily: 'Roboto, sans-serif',
   zIndex: zIndex,
   palette: {
-    primary1Color: Colors.amber700,
-    primary2Color: Colors.amber700,
-    primary3Color: Colors.blueGrey500,
-    accent1Color: Colors.blueGrey500,
-    accent2Color: Colors.blueGrey500,
-    accent3Color: Colors.amber700,
-    textColor: Colors.darkBlack,
+    primary1Color: Colors.deepOrange700,
+    primary2Color: Colors.deepOrange700,
+    primary3Color: Colors.lightBlue50,
+    accent1Color: Colors.lightBlue800,
+    accent2Color: Colors.lightBlue800,
+    accent3Color: Colors.lightBlue800,
+    textColor: '#272727',
     alternateTextColor: Colors.grey50,
-    canvasColor: Colors.blueGrey900,
-    borderColor: ColorManipulator.fade(Colors.fullWhite, 0.3),
-    disabledColor: ColorManipulator.fade(Colors.fullWhite, 0.3),
-    pickerHeaderColor: ColorManipulator.fade(Colors.fullWhite, 0.12),
-    clockCircleColor: ColorManipulator.fade(Colors.fullWhite, 0.12),
+    canvasColor: Colors.grey50,
+    borderColor: Colors.grey300,
+    disabledColor: ColorManipulator.fade(Colors.darkBlack, 0.3),
+    pickerHeaderColor: '#272727',
+    clockCircleColor: '#272727',
   },
 };

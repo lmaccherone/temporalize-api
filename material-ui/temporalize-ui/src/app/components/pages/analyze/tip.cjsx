@@ -85,14 +85,6 @@ TiPChart = React.createClass(
               footerFormat: '</table>',
               followPointer: true
             },
-            # plotOptions: {
-            #   series: {
-            #     dataLabels: {
-            #       enabled: true,
-            #       format: '{point.name}'
-            #     }
-            #   }
-            # },
             series: series
           }
 

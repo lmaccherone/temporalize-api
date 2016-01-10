@@ -17,8 +17,6 @@ import Analyze from './components/pages/analyze';
 import TiP from './components/pages/analyze/tip';
 
 import Config from './components/pages/config';
-import Colors from './components/pages/config/colors';
-import Themes from './components/pages/config/themes';
 import Organization from './components/pages/config/organization';
 
 function requiresAuth(nextState, replaceState) {
@@ -59,8 +57,6 @@ const AppRoutes = (
 
     <Redirect from="config" to="/config/organization" />
     <Route path="config" component={Config} onEnter={requiresAuth}>
-      <Route path="colors" component={Colors} />
-      <Route path="themes" component={Themes} />
       <Route path="organization" component={Organization} />
     </Route>
 
